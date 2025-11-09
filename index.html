@@ -1,0 +1,1278 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Observation Report – Unit 102</title>
+<style>
+  body { font-family: Arial, sans-serif; margin: 20px; background: #fff; color: #000; }
+  table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+  th, td { border: 1px solid #000; padding: 6px; vertical-align: top; }
+  th { text-align: left; background: #f2f2f2; }
+  tr.checked { background-color: #d9fdd3; }
+  td.sub { padding-left: 30px; font-style: italic; }
+  td.letter { width: 30px; text-align: center; }
+  h2 { margin-top: 30px; }
+  textarea, input[type=text] { width: 100%; box-sizing: border-box; }
+  .photo-section, .feedback-section, .signature-section { margin-top: 20px; }
+  .photo-card { border: 1px solid #000; padding: 10px; margin-top: 10px; }
+  img { width: 100%; max-width: 100%; height: auto; display: block; margin-bottom: 8px; }
+  .photo-card { width: 100%; }
+  .photo-card input[type=text] { margin-top: 6px; }
+  select { width: 100%; }
+  canvas { border: 1px solid #000; width: 100%; height: 150px; }
+  button { margin-top: 10px; padding: 6px 12px; }
+
+#signature { touch-action: none; }
+
+
+/* Prevent scroll while signing */
+.signing { touch-action: none; overscroll-behavior: contain; }
+.sig-canvas { touch-action: none; }
+
+
+
+/* ===== Print styles for A4 ===== */
+@page { size: A4; margin: 12mm; }
+@media print {
+  html, body { width: 210mm; }
+  body {
+    font-size: 11pt !important;
+    line-height: 1.25 !important;
+    color: #000 !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  h1 { font-size: 16pt !important; margin: 0 0 6pt 0 !important; }
+  h2 { font-size: 13pt !important; margin: 8pt 0 6pt 0 !important; }
+  #versionBadge, .controls, .toggle-criteria, .criteria-panel, .delete-photo,
+  #exportPDFHelper, #openInSafariBtn, #openInSafariBtn2, #exportPDF_Fallback2,
+  #exportPDF_Fallback, .criteria-actions button { display: none !important; }
+
+  table { width: 100% !important; border-collapse: collapse !important; }
+  th, td { padding: 4pt !important; border: 1px solid #000 !important; vertical-align: top !important; }
+  .criteria-table th, .criteria-table td { font-size: 10pt !important; }
+
+  /* Keep rows together where possible */
+  tr { page-break-inside: avoid; break-inside: avoid; }
+  .photo-card, .sig-card, .asec-table { page-break-inside: avoid; break-inside: avoid; }
+
+  /* Photos */
+  .photo-card img { max-width: 100% !important; height: auto !important; max-height: 120mm !important; }
+  .criteria-tags { font-size: 9pt !important; gap: 3pt !important; }
+  .criteria-tag { padding: 1pt 3pt !important; border-width: 0.5pt !important; }
+
+  /* Signatures: ensure they fit neatly */
+  .sig-canvas { width: 100% !important; height: 90px !important; border: 1px solid #000 !important; }
+  .sig-card label { font-size: 10pt !important; }
+  .sig-grid { gap: 8pt !important; }
+
+  /* Top header inputs render as text via export script, but ensure layout remains tight */
+  .asec-table input { font-size: 10pt !important; padding: 2pt !important; }
+}
+
+
+/* === Multi-criteria picker UI === */
+.criteria-picker { margin-top: 8px; }
+.criteria-panel { border: 1px solid #000; padding: 8px; margin-top: 6px; max-height: 220px; overflow: auto; display: none; background:#fff; }
+.criteria-panel.open { display: block; }
+.criteria-list label { display: block; margin-bottom: 4px; cursor: pointer; }
+.criteria-tags { margin-top: 6px; display: flex; flex-wrap: wrap; gap: 6px; }
+.criteria-tag { border: 1px solid #000; padding: 2px 6px; font-size: 12px; border-radius: 4px; }
+.photo-card .controls-row { display:flex; gap:8px; flex-wrap:wrap; margin-top:6px; }
+.criteria-filter { display:flex; gap:6px; margin-bottom:8px; }
+.criteria-filter input { flex:1; padding:4px; border:1px solid #000; }
+@media print {
+  .criteria-panel, .toggle-criteria, .criteria-actions button { display:none !important; }
+  .criteria-tags { font-size: 9pt !important; gap: 3pt !important; }
+  .criteria-tag { padding: 1pt 3pt !important; border-width: 0.5pt !important; }
+}
+</style>
+<style>
+/* Print-friendly page setup */
+@media print {
+  .controls, .toggle-criteria, .criteria-panel, .delete-photo, #exportPDFHelper, #openInSafariBtn { display: none !important; }
+  body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  @page { size: A4; margin: 12mm; }
+}
+#storageStatus {
+  display:inline-block; margin-left:8px; font-size:12px; padding:2px 6px; border:1px solid #888; border-radius:10px;
+}
+</style><style>
+@media print {
+  .sig-card button { display:none !important; }
+}
+</style></head>
+<body>
+<h1>Assessor Observation Report – Unit 102</h1><div id="versionBadge" style="margin:6px 0 12px 0; font-size:12px; display:inline-block; border:1px solid #888; padding:2px 8px; border-radius:10px;">Build v11 — 2025-11-09 14:26 UTC (Auto-Obs)</div><div id="versionBadge" style="margin:6px 0 12px 0; font-size:12px; display:inline-block; border:1px solid #888; padding:2px 8px; border-radius:10px;">Build v10 — 2025-11-09 14:15 UTC (Multi-criteria)</div><div id="versionBadge" style="margin:6px 0 12px 0; font-size:12px; display:inline-block; border:1px solid #888; padding:2px 8px; border-radius:10px;">Build v9 — 2025-11-09 14:05 UTC (A4 print)</div><div class="asec-header">
+<h2>Applying Health, Safety &amp; Environmental Considerations</h2>
+<table class="asec-table" style="width:100%; border-collapse:collapse; margin:10px 0;">
+<tr>
+<th style="text-align:left; border:1px solid #000; padding:6px; width:180px;">Candidate name</th>
+<td style="border:1px solid #000; padding:6px;">
+<input id="candidateName" style="width:100%; box-sizing:border-box;" type="text"/>
+</td>
+<th style="text-align:left; border:1px solid #000; padding:6px; width:100px;">Date</th>
+<td style="border:1px solid #000; padding:6px; width:220px;">
+<input id="assessmentDate" style="width:100%; box-sizing:border-box;" type="date"/>
+</td>
+</tr>
+<tr>
+<th style="text-align:left; border:1px solid #000; padding:6px;">Job Description</th>
+<td colspan="3" style="border:1px solid #000; padding:6px;">
+<input id="jobDescription" style="width:100%; box-sizing:border-box;" type="text"/>
+</td>
+</tr>
+<tr>
+<th style="text-align:left; border:1px solid #000; padding:6px;">Site address</th>
+<td colspan="3" style="border:1px solid #000; padding:6px;">
+<input id="siteAddress" style="width:100%; box-sizing:border-box;" type="text"/>
+</td>
+</tr>
+</table>
+</div>
+<!-- Section 1 -->
+<table class="criteria-table">
+<tr><th colspan="7">1 Apply relevant health &amp; safety legislation in the workplace.</th></tr>
+<tr><th>Criteria</th><th>Sub</th><th>Description</th><th>Obs</th><th>WT</th><th>PE</th></tr>
+<tr><td>1.1</td><td></td><td>Identify which workplace health and safety procedures are relevant to the working environment and comply with their duties and obligations as defined by current legislation and organisational procedures</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr>
+<tr><td>1.2</td><td></td><td>Produce a risk assessment and method statement in accordance with organisational procedures for a given work activity.</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr>
+<tr><td rowspan="4">1.3</td><td></td><td>Work within the requirements of:</td><td></td><td></td><td></td></tr>
+<tr><td class="letter">a</td><td class="sub">Risk assessments</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr>
+<tr><td class="letter">b</td><td class="sub">Method statements</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr>
+<tr><td class="letter">c</td><td class="sub">Safe systems of work</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr>
+</table>
+<!-- Section 2 -->
+<table class="criteria-table">
+<tr><th colspan="7">2 Assess the work environment for hazards and identify remedial actions in accordance with Health and Safety legislation</th></tr>
+<tr><th>Criteria</th><th>Sub</th><th>Description</th><th>Obs</th><th>WT</th><th>PE</th></tr>
+<tr><td>2.1</td><td></td><td>Identify unsafe situations and conditions and take remedial actions</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr>
+<tr><td rowspan="4">2.2</td><td></td><td>Assess the work environment and revise work practices accordingly to take into account hazards which could cause harm, including the handling of potentially hazardous:</td><td></td><td></td><td></td></tr>
+<tr><td class="letter">a</td><td class="sub">Materials</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr>
+<tr><td class="letter">b</td><td class="sub">Tools</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr>
+<tr><td class="letter">c</td><td class="sub">Equipment</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr>
+<tr><td>2.3</td><td></td><td>Identify any hazards which may present a high risk and report their presence to relevant persons who have overall responsibility for health and safety in the workplace</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr>
+<tr><td>2.4</td><td></td><td>Apply measures to control health and safety hazards.</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr>
+<tr><td>2.5</td><td></td><td>Select and use correct Personal Protective Equipment.</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr>
+</table>
+<!-- Section 3 -->
+<table class="criteria-table">
+<tr><th colspan="7">3 Apply methods and procedures to ensure work on site is in accordance with Health and Safety legislation</th></tr>
+<tr><th>Criteria</th><th>Sub</th><th>Description</th><th>Obs</th><th>WT</th><th>PE</th></tr>
+<tr><td>3.1</td><td></td><td>Demonstrate a level of personal conduct and behaviour within the workplace, to ensure that the health and safety of themselves and others is not endangered</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr>
+<tr><td rowspan="4">3.2</td><td></td><td>Apply procedures to ensure the safe use, maintenance and storage of tools, plant and equipment as stipulated in:</td><td></td><td></td><td></td></tr>
+<tr><td class="letter">a</td><td class="sub">Workplace policies (company and site)</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr>
+<tr><td class="letter">b</td><td class="sub">Supplier information</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr>
+<tr><td class="letter">c</td><td class="sub">Manufacturer’s instructions</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr>
+<tr><td>3.3</td><td></td><td>Comply with hazard warning, mandatory instruction and prohibition notices</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr>
+<tr><td>3.4</td><td></td><td>Apply procedures to ensure the safety of the work location through the correct use of guards, barriers, and notices</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr>
+<tr><td rowspan="5">3.5</td><td></td><td>Use access equipment correctly<br/>Range – assess TWO from the following:</td><td></td><td></td><td></td></tr>
+<tr><td class="letter">a</td><td class="sub">Ladder</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr>
+<tr><td class="letter">b</td><td class="sub">Tower scaffold or MEWP</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr>
+<tr><td class="letter">c</td><td class="sub">Stepladder</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr>
+<tr><td class="letter">d</td><td class="sub">Platform</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr>
+</table>
+<!-- Section 4 -->
+<table class="criteria-table">
+<tr><th colspan="7">4 Be able to work in accordance with environmental legislation for electrical services.</th></tr>
+<tr><th>Criteria</th><th>Sub</th><th>Description</th><th>Obs</th><th>WT</th><th>PE</th></tr>
+<tr><td rowspan="7">4.1</td><td></td><td>Demonstrate appropriate procedures for the safe handling, storage &amp; disposal of hazardous materials &amp; products. (Cover one):</td><td></td><td></td><td></td></tr>
+<tr><td class="letter">a</td><td class="sub">Environmental Protection Act</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr>
+<tr><td class="letter">b</td><td class="sub">Hazardous Waste Regulations</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr>
+<tr><td class="letter">c</td><td class="sub">Pollution Prevention &amp; Control Act</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr>
+<tr><td class="letter">d</td><td class="sub">Control of Pollution Act</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr>
+<tr><td class="letter">e</td><td class="sub">Control of Noise at Work Regulations</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr>
+<tr><td class="letter">f</td><td class="sub">Environmental Act</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr>
+</table>
+<div class="photo-section">
+<h2>Photo Evidence</h2>
+<input accept="image/*" id="photoInput" multiple="" type="file"/><br/>
+<div id="photoContainer"></div>
+</div>
+<div class="feedback-section">
+<h2>Assessor Feedback</h2>
+<textarea placeholder="Enter assessor feedback here..." rows="5"></textarea>
+</div>
+<div class="signature-section">
+<h2>Signatures</h2>
+<div class="sig-grid" style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+<div class="sig-card" style="border:1px solid #000; padding:10px;">
+<label for="assessorName"><strong>Assessor name</strong></label>
+<input id="assessorName" style="width:100%; box-sizing:border-box; margin:6px 0 8px 0;" type="text"/>
+<label><strong>Assessor signature</strong></label>
+<canvas class="sig-canvas" id="signatureAssessor" style="border:1px solid #000; width:100%; height:120px;"></canvas><br/>
+<button id="clearSigAssessor" type="button">Clear Assessor Signature</button>
+</div>
+<div class="sig-card" style="border:1px solid #000; padding:10px;">
+<label for="learnerName"><strong>Learner name</strong></label>
+<input id="learnerName" style="width:100%; box-sizing:border-box; margin:6px 0 8px 0;" type="text"/>
+<label><strong>Learner signature</strong></label>
+<canvas class="sig-canvas" id="signatureLearner" style="border:1px solid #000; width:100%; height:120px;"></canvas><br/>
+<button id="clearSigLearner" type="button">Clear Learner Signature</button>
+</div>
+</div>
+</div>
+<div class="controls">
+<button id="saveDraft">Save Draft</button>
+<button id="loadDraft">Load Draft</button>
+<button id="clearDraft">Clear Draft</button>
+<button id="exportPDF">Save / Export as PDF</button>
+</div>
+<script>
+// Highlight checked rows
+const tables = document.querySelectorAll('.criteria-table');
+tables.forEach(table => {
+  table.addEventListener('change', e => {
+    if (e.target.type === 'checkbox') {
+      const row = e.target.closest('tr');
+      const anyChecked = row.querySelectorAll('input[type="checkbox"]:checked').length > 0;
+      row.classList.toggle('checked', anyChecked);
+    }
+  });
+});
+
+// Photo upload handling
+const photoInput = document.getElementById('photoInput');
+const container = document.getElementById('photoContainer');
+const criteriaOptions = ['1.1','1.2','1.3a','1.3b','1.3c','2.1','2.2a','2.2b','2.2c','2.3','2.4','2.5','3.1','3.2a','3.2b','3.2c','3.3','3.4','3.5a','3.5b','3.5c','3.5d','4.1a','4.1b','4.1c','4.1d','4.1e','4.1f'];
+
+photoInput.addEventListener('change', e => {
+  for (const file of e.target.files) {
+    const reader = new FileReader();
+    reader.onload = ev => {
+      const div = document.createElement('div');
+      div.className = 'photo-card';
+      div.innerHTML = `<img src="${ev.target.result}" alt="Photo"><input type='text' placeholder='Caption'><br><label>Criteria: <select>${criteriaOptions.map(c => `<option>${c}</option>`).join('')}</select></label>`;
+      container.appendChild(div);
+    };
+    reader.readAsDataURL(file);
+  }
+});
+
+// Signature pad
+const sigCanvas = document.getElementById('signature');
+const ctx = sigCanvas.getContext('2d');
+let drawing = false;
+
+sigCanvas.addEventListener('mousedown', e => {drawing = true; ctx.moveTo(e.offsetX, e.offsetY);});
+sigCanvas.addEventListener('mousemove', e => {if (drawing) {ctx.lineTo(e.offsetX, e.offsetY); ctx.stroke();}});
+window.addEventListener('mouseup', () => drawing = false);
+
+document.getElementById('clearSig').addEventListener('click', () => ctx.clearRect(0, 0, sigCanvas.width, sigCanvas.height));
+</script>
+<script>
+const STORAGE_KEY = 'obs-report-unit102';
+const sigCanvas = document.getElementById('signature');
+const ctx = sigCanvas.getContext('2d');
+
+function collectData() {
+  return {
+    feedback: document.querySelector('textarea')?.value || '',
+    signature: sigCanvas.toDataURL(),
+    ticks: Array.from(document.querySelectorAll('input[type="checkbox"]')).map(cb => cb.checked),
+    photos: Array.from(document.querySelectorAll('.photo-card img')).map(img => img.src)
+  };
+}
+
+function applyData(data) {
+  if (!data) return;
+  document.querySelector('textarea').value = data.feedback || '';
+  document.querySelectorAll('input[type="checkbox"]').forEach((cb, i) => cb.checked = !!data.ticks[i]);
+  if (data.signature) {
+    const img = new Image();
+    img.onload = () => { ctx.clearRect(0, 0, sigCanvas.width, sigCanvas.height); ctx.drawImage(img, 0, 0); };
+    img.src = data.signature;
+  }
+  if (data.photos) {
+    const container = document.getElementById('photoContainer');
+    container.innerHTML = '';
+    data.photos.forEach(src => {
+      const div = document.createElement('div');
+      div.className = 'photo-card';
+      div.innerHTML = `<img src="${src}" alt="Photo"><input type='text' placeholder='Caption'><br>`;
+      container.appendChild(div);
+    });
+  }
+}
+
+document.getElementById('saveDraft').addEventListener('click', () => {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(collectData()));
+  alert('Draft saved');
+});
+
+document.getElementById('loadDraft').addEventListener('click', () => {
+  const data = localStorage.getItem(STORAGE_KEY);
+  if (data) applyData(JSON.parse(data));
+});
+
+document.getElementById('clearDraft').addEventListener('click', () => {
+  localStorage.removeItem(STORAGE_KEY);
+  alert('Draft cleared');
+});
+
+document.getElementById('exportPDF').addEventListener('click', () => window.print());
+</script>
+<script>
+(function(){
+  // --- Trim to three checkbox columns (Obs, WT, PE) ---
+  const tables = document.querySelectorAll('.criteria-table');
+  tables.forEach(tbl => {
+    // Remove any OTJ header
+    tbl.querySelectorAll('th').forEach(th => {
+      if ((th.textContent || '').toLowerCase().includes('otj')) th.remove();
+    });
+    // Remove extra checkbox cells in each row
+    tbl.querySelectorAll('tr').forEach(tr => {
+      const cells = Array.from(tr.children);
+      const cbCells = cells.map((td)=>td).filter(td => td.querySelector && td.querySelector('input[type="checkbox"]'));
+      if (cbCells.length > 3) {
+        const extras = cbCells.slice(0, cbCells.length - 3);
+        extras.forEach(td => td.remove());
+      }
+    });
+  });
+
+  // --- Photo delete buttons ---
+  const container = document.getElementById('photoContainer');
+  if (container) {
+    // Add delete button to existing cards
+    container.querySelectorAll('.photo-card').forEach(card => {
+      if (!card.querySelector('.delete-photo')) {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'delete-photo';
+        btn.textContent = 'Delete photo';
+        card.appendChild(btn);
+      }
+    });
+    // Delegate
+    container.addEventListener('click', (e) => {
+      if (e.target && e.target.classList.contains('delete-photo')) {
+        const card = e.target.closest('.photo-card');
+        if (card && confirm('Remove this photo?')) card.remove();
+      }
+    });
+    // Patch upload handler to add delete buttons to new cards
+    const input = document.getElementById('photoInput');
+    if (input) {
+      input.addEventListener('change', () => {
+        setTimeout(() => {
+          container.querySelectorAll('.photo-card').forEach(card => {
+            if (!card.querySelector('.delete-photo')) {
+              const btn = document.createElement('button');
+              btn.type = 'button';
+              btn.className = 'delete-photo';
+              btn.textContent = 'Delete photo';
+              card.appendChild(btn);
+            }
+          });
+        }, 60);
+      }, { capture: true });
+    }
+  }
+
+  // --- Signature touch support for iPad ---
+  const sigCanvas = document.getElementById('signature');
+  if (sigCanvas && sigCanvas.getContext) {
+    const ctx = sigCanvas.getContext('2d');
+    let drawing = false;
+
+    // if mouse listeners not already bound, bind them
+    if (!sigCanvas.__touchBound) {
+      function getTouchPos(canvasDom, touchEvent) {
+        const rect = canvasDom.getBoundingClientRect();
+        const t = touchEvent.touches[0] || touchEvent.changedTouches[0];
+        return { x: t.clientX - rect.left, y: t.clientY - rect.top };
+      }
+      sigCanvas.addEventListener('touchstart', function(e){
+        e.preventDefault();
+        const p = getTouchPos(sigCanvas, e);
+        drawing = true;
+        ctx.moveTo(p.x, p.y);
+      }, {passive:false});
+      sigCanvas.addEventListener('touchmove', function(e){
+        e.preventDefault();
+        if (!drawing) return;
+        const p = getTouchPos(sigCanvas, e);
+        ctx.lineTo(p.x, p.y);
+        ctx.stroke();
+      }, {passive:false});
+      sigCanvas.addEventListener('touchend', function(e){
+        e.preventDefault();
+        drawing = false;
+      }, {passive:false});
+      sigCanvas.__touchBound = true;
+    }
+  }
+
+  // --- Improve Save Draft alert & add fallback ---
+  const saveBtn = document.getElementById('saveDraft');
+  if (saveBtn) {
+    const STORAGE_KEY = 'obs-report-unit102';
+    function collectData() {
+      const feedbackEl = document.getElementById('feedback') || document.querySelector('textarea');
+      const container = document.getElementById('photoContainer');
+      const sigCanvas = document.getElementById('signature');
+      return {
+        feedback: feedbackEl ? feedbackEl.value : '',
+        signature: sigCanvas ? sigCanvas.toDataURL() : '',
+        ticks: Array.from(document.querySelectorAll('input[type="checkbox"]')).map(cb=>cb.checked),
+        photos: container ? Array.from(container.querySelectorAll('img')).map(img=>img.src) : []
+      };
+    }
+    saveBtn.addEventListener('click', () => {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(collectData()));
+        alert('Draft saved locally — reopen this page later to continue.');
+      } catch (err) {
+        window.tempDraft = collectData();
+        alert('Draft temporarily saved for this session — keep this tab open to retain changes.');
+      }
+    }, {capture:true});
+  }
+})();
+</script>
+<script>
+// === Signature: pointer events + high-DPI ===
+(function(){
+  const canvas = document.getElementById('signature');
+  if (!canvas || !canvas.getContext || canvas.__pointerEnhanced) return;
+  canvas.__pointerEnhanced = true;
+  const ctx = canvas.getContext('2d');
+
+  function resizeCanvasForDPR() {
+    const dpr = window.devicePixelRatio || 1;
+    const rect = canvas.getBoundingClientRect();
+    const w = Math.max(1, Math.round(rect.width * dpr));
+    const h = Math.max(1, Math.round(rect.height * dpr));
+    if (canvas.width !== w || canvas.height !== h) {
+      const prev = ctx.getImageData(0, 0, canvas.width || 1, canvas.height || 1);
+      canvas.width = w; canvas.height = h;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.lineWidth = 2; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+      try { ctx.putImageData(prev, 0, 0); } catch(_) {}
+    }
+  }
+  resizeCanvasForDPR();
+  window.addEventListener('resize', resizeCanvasForDPR);
+
+  let drawing = false;
+  function point(e){
+    const rect = canvas.getBoundingClientRect();
+    return { x: e.clientX - rect.left, y: e.clientY - rect.top };
+  }
+  canvas.addEventListener('pointerdown', (e)=>{
+    if (e.pointerType === 'touch') e.preventDefault();
+    canvas.setPointerCapture(e.pointerId);
+    drawing = true;
+    const p = point(e);
+    ctx.beginPath(); ctx.moveTo(p.x, p.y);
+  }, {passive:false});
+
+  canvas.addEventListener('pointermove', (e)=>{
+    if (!drawing) return;
+    if (e.pointerType === 'touch') e.preventDefault();
+    const p = point(e);
+    ctx.lineTo(p.x, p.y); ctx.stroke();
+  }, {passive:false});
+
+  function endStroke(e){
+    if (!drawing) return;
+    drawing = false;
+    try { canvas.releasePointerCapture(e.pointerId); } catch(_){}
+  }
+  canvas.addEventListener('pointerup', endStroke);
+  canvas.addEventListener('pointercancel', endStroke);
+
+  const clearBtn = document.getElementById('clearSig');
+  if (clearBtn && !clearBtn.__bound) {
+    clearBtn.__bound = true;
+    clearBtn.addEventListener('click', ()=>ctx.clearRect(0,0,canvas.width,canvas.height));
+  }
+})();
+
+// === Robust Save/Load V3 (captions + selected criteria + signature) ===
+(function(){
+  const STORAGE_KEY = 'obs-report-unit102-v3';
+  const saveBtn  = document.getElementById('saveDraft');
+  const loadBtn  = document.getElementById('loadDraft');
+  const clearBtn = document.getElementById('clearDraft');
+
+  function collectDataV3() {
+    const feedbackEl = document.getElementById('feedback') || document.querySelector('textarea');
+    const sigCanvas  = document.getElementById('signature');
+    const photos = Array.from(document.querySelectorAll('#photoContainer .photo-card')).map(card => {
+      const img = card.querySelector('img');
+      const captionEl = card.querySelector('.caption') || card.querySelector('input[type="text"]');
+      const caption = captionEl ? captionEl.value : '';
+      const selected = Array.from(card.querySelectorAll('.criteria-panel input[type="checkbox"]:checked')).map(i => i.value);
+      return { src: img ? img.src : '', caption, criteria: selected };
+    });
+    return {
+      feedback: feedbackEl ? feedbackEl.value : '',
+      signature: sigCanvas ? sigCanvas.toDataURL() : '',
+      ticks: Array.from(document.querySelectorAll('input[type="checkbox"]')).map(cb => cb.checked),
+      photos
+    };
+  }
+
+  function applyDataV3(data) {
+    if (!data) return;
+    const feedbackEl = document.getElementById('feedback') || document.querySelector('textarea');
+    if (feedbackEl) feedbackEl.value = data.feedback || '';
+
+    document.querySelectorAll('input[type="checkbox"]').forEach((cb,i)=>cb.checked = !!(data.ticks && data.ticks[i]));
+
+    const sigCanvas = document.getElementById('signature');
+    if (sigCanvas && data.signature) {
+      const ctx = sigCanvas.getContext('2d');
+      const img = new Image();
+      img.onload = () => { ctx.clearRect(0,0,sigCanvas.width,sigCanvas.height); ctx.drawImage(img,0,0); };
+      img.src = data.signature;
+    }
+
+    const container = document.getElementById('photoContainer');
+    if (container) {
+      container.innerHTML = '';
+      (data.photos || []).forEach(ph => {
+        const div = document.createElement('div');
+        div.className = 'photo-card';
+        div.innerHTML = `
+          <img src="${ph.src}" alt="Photo">
+          <input type="text" class="caption" placeholder="Caption" value="${ph.caption || ''}">
+          <div class="criteria-picker"></div>
+          <div class="controls-row"><button type="button" class="delete-photo">Delete photo</button></div>
+        `;
+        container.appendChild(div);
+      });
+      document.dispatchEvent(new Event('obs-photos-restored'));
+    }
+  }
+
+  function bind() {
+    if (saveBtn && !saveBtn.__bound) {
+      saveBtn.__bound = true;
+      saveBtn.addEventListener('click', () => {
+        try {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(collectDataV3()));
+          alert('Draft saved locally — reopen this page later to continue.');
+        } catch (err) {
+          window.tempDraftV3 = collectDataV3();
+          alert('Draft temporarily saved for this session — keep this tab open to retain changes.');
+        }
+      });
+    }
+    if (loadBtn && !loadBtn.__bound) {
+      loadBtn.__bound = true;
+      loadBtn.addEventListener('click', () => {
+        try {
+          const d = localStorage.getItem(STORAGE_KEY);
+          if (d) { applyDataV3(JSON.parse(d)); return; }
+        } catch (_){}
+        try {
+          const old = localStorage.getItem('obs-report-unit102');
+          if (old) {
+            const data = JSON.parse(old);
+            data.photos = (data.photos || []).map(src => ({src, caption:'', criteria:[]}));
+            applyDataV3(data);
+            return;
+          }
+        } catch(_){}
+        if (window.tempDraftV3) applyDataV3(window.tempDraftV3);
+      });
+    }
+    if (clearBtn && !clearBtn.__bound) {
+      clearBtn.__bound = true;
+      clearBtn.addEventListener('click', () => {
+        try { localStorage.removeItem(STORAGE_KEY); } catch(_){}
+        alert('Draft cleared');
+      });
+    }
+  }
+  bind();
+})();
+</script>
+<div id="exportPDFHelper" style="margin-top:10px;"></div><script>
+(async function(){
+  // --- Try to enable persistent storage for reliable Save Draft ---
+  const statusEl = document.createElement('span');
+  statusEl.id = 'storageStatus';
+  const ctrl = document.querySelector('.controls');
+  if (ctrl) ctrl.appendChild(statusEl);
+  async function updatePersistStatus() {
+    try {
+      if (!('storage' in navigator) || !navigator.storage.persisted) return;
+      const persisted = await navigator.storage.persisted();
+      if (persisted) { statusEl.textContent = 'Saving: persistent'; return; }
+      if (navigator.storage.persist) {
+        const ok = await navigator.storage.persist();
+        statusEl.textContent = ok ? 'Saving: persistent' : 'Saving: session-only';
+      } else {
+        statusEl.textContent = 'Saving: session-only';
+      }
+    } catch(e){ statusEl.textContent = 'Saving: session-only'; }
+  }
+  updatePersistStatus();
+
+  // --- Export to PDF helper: open a print-friendly window and trigger print ---
+  function exportToPDFViaPrint() {
+    try {
+      const html = document.documentElement.cloneNode(true);
+      // Hide buttons in the clone
+      html.querySelectorAll('.controls, .toggle-criteria, .criteria-panel, .delete-photo, #exportPDFHelper, #openInSafariBtn').forEach(el=>el && el.remove());
+      const w = window.open('', '_blank');
+      if (!w) { alert('Popup blocked. Allow popups for this site to export.'); return; }
+      w.document.open();
+      w.document.write('<!DOCTYPE html><html>' + html.innerHTML + '</html>');
+      w.document.close();
+      // Ensure print after load
+      w.onload = function(){ try { w.focus(); w.print(); } catch(e) {} };
+    } catch (e) {
+      alert('Could not open print window. You can also use Share → Print in Safari.');
+    }
+  }
+
+  // Add helper buttons if we can find the controls
+  const helper = document.getElementById('exportPDFHelper');
+  if (helper) {
+    helper.innerHTML = ''
+      + '<button id="exportPDF_Fallback" type="button">Export as PDF (compatibility)</button> '
+      + '<button id="openInSafariBtn" type="button">Open in Safari to Print</button>';
+    const btn = document.getElementById('exportPDF_Fallback');
+    if (btn) btn.addEventListener('click', exportToPDFViaPrint);
+    const openSafari = document.getElementById('openInSafariBtn');
+    if (openSafari) {
+      openSafari.addEventListener('click', () => {
+        try {
+          // Open a new tab with current page URL; on iOS this opens in browser chrome
+          window.open(window.location.href, '_blank');
+        } catch(e) {
+          alert('Could not open Safari automatically. Copy the URL and open it in Safari to use Share → Print.');
+        }
+      });
+    }
+  }
+
+  // Also patch existing Export button if present
+  const nativeExportBtn = document.getElementById('exportPDF');
+  if (nativeExportBtn && !nativeExportBtn.__patched) {
+    nativeExportBtn.__patched = true;
+    nativeExportBtn.addEventListener('click', function(e){
+      e.preventDefault();
+      exportToPDFViaPrint();
+    }, {capture: true});
+  }
+})();
+</script><script>
+(function(){
+  // Pointer-enhanced signature handling for multiple canvases
+  function enhanceSignatureCanvas(canvasId, clearBtnId){
+    const canvas = document.getElementById(canvasId);
+    if (!canvas || canvas.__pointerEnhanced) return;
+    canvas.__pointerEnhanced = true;
+    const ctx = canvas.getContext('2d');
+
+    function resizeCanvasForDPR() {
+      const dpr = window.devicePixelRatio || 1;
+      const rect = canvas.getBoundingClientRect();
+      const w = Math.max(1, Math.round(rect.width * dpr));
+      const h = Math.max(1, Math.round(rect.height * dpr));
+      if (canvas.width !== w || canvas.height !== h) {
+        const prev = ctx.getImageData(0, 0, canvas.width || 1, canvas.height || 1);
+        canvas.width = w; canvas.height = h;
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        ctx.lineWidth = 2; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+        try { ctx.putImageData(prev, 0, 0); } catch(_) {}
+      }
+    }
+    resizeCanvasForDPR();
+    window.addEventListener('resize', resizeCanvasForDPR);
+
+    let drawing = false;
+    function point(e){
+      const rect = canvas.getBoundingClientRect();
+      return { x: e.clientX - rect.left, y: e.clientY - rect.top };
+    }
+    canvas.addEventListener('pointerdown', (e)=>{
+      if (e.pointerType === 'touch') e.preventDefault();
+      canvas.setPointerCapture(e.pointerId);
+      drawing = true;
+      const p = point(e);
+      ctx.beginPath(); ctx.moveTo(p.x, p.y);
+    }, {passive:false});
+    canvas.addEventListener('pointermove', (e)=>{
+      if (!drawing) return;
+      if (e.pointerType === 'touch') e.preventDefault();
+      const p = point(e);
+      ctx.lineTo(p.x, p.y); ctx.stroke();
+    }, {passive:false});
+    function endStroke(e){
+      if (!drawing) return;
+      drawing = false;
+      try { canvas.releasePointerCapture(e.pointerId); } catch(_){}
+    }
+    canvas.addEventListener('pointerup', endStroke);
+    canvas.addEventListener('pointercancel', endStroke);
+
+    const clearBtn = document.getElementById(clearBtnId);
+    if (clearBtn && !clearBtn.__bound) {
+      clearBtn.__bound = true;
+      clearBtn.addEventListener('click', ()=>ctx.clearRect(0,0,canvas.width,canvas.height));
+    }
+  }
+
+  enhanceSignatureCanvas('signatureAssessor', 'clearSigAssessor');
+  enhanceSignatureCanvas('signatureLearner', 'clearSigLearner');
+
+  // Upgrade Save/Load to include the new fields + both signatures
+  const STORAGE_KEY = 'obs-report-unit102-v4'; // bump key
+  const saveBtn  = document.getElementById('saveDraft');
+  const loadBtn  = document.getElementById('loadDraft');
+  const clearBtn = document.getElementById('clearDraft');
+
+  function collectDataV4() {
+    const feedbackEl = document.getElementById('feedback') || document.querySelector('textarea');
+    const sigA = document.getElementById('signatureAssessor');
+    const sigL = document.getElementById('signatureLearner');
+    const photos = Array.from(document.querySelectorAll('#photoContainer .photo-card')).map(card => {
+      const img = card.querySelector('img');
+      const captionEl = card.querySelector('.caption') || card.querySelector('input[type="text"]');
+      const caption = captionEl ? captionEl.value : '';
+      const selected = Array.from(card.querySelectorAll('.criteria-panel input[type="checkbox"]:checked')).map(i => i.value);
+      return { src: img ? img.src : '', caption, criteria: selected };
+    });
+    return {
+      // New header fields
+      candidateName: document.getElementById('candidateName')?.value || '',
+      assessmentDate: document.getElementById('assessmentDate')?.value || '',
+      jobDescription: document.getElementById('jobDescription')?.value || '',
+      siteAddress: document.getElementById('siteAddress')?.value || '',
+      assessorName: document.getElementById('assessorName')?.value || '',
+      learnerName: document.getElementById('learnerName')?.value || '',
+      // Existing fields
+      feedback: feedbackEl ? feedbackEl.value : '',
+      signatureAssessor: sigA ? sigA.toDataURL() : '',
+      signatureLearner: sigL ? sigL.toDataURL() : '',
+      ticks: Array.from(document.querySelectorAll('input[type="checkbox"]')).map(cb => cb.checked),
+      photos
+    };
+  }
+
+  function applyDataV4(data) {
+    if (!data) return;
+    // Header fields
+    const map = {
+      candidateName: 'candidateName',
+      assessmentDate: 'assessmentDate',
+      jobDescription: 'jobDescription',
+      siteAddress: 'siteAddress',
+      assessorName: 'assessorName',
+      learnerName: 'learnerName'
+    };
+    Object.keys(map).forEach(k => {
+      const el = document.getElementById(map[k]);
+      if (el) el.value = data[k] || '';
+    });
+
+    // Existing
+    const feedbackEl = document.getElementById('feedback') || document.querySelector('textarea');
+    if (feedbackEl) feedbackEl.value = data.feedback || '';
+
+    document.querySelectorAll('input[type="checkbox"]').forEach((cb,i)=>cb.checked = !!(data.ticks && data.ticks[i]));
+
+    function restoreSig(canvasId, img64){
+      const c = document.getElementById(canvasId);
+      if (c && img64) {
+        const ctx = c.getContext('2d');
+        const img = new Image();
+        img.onload = () => { ctx.clearRect(0,0,c.width,c.height); ctx.drawImage(img,0,0); };
+        img.src = img64;
+      }
+    }
+    restoreSig('signatureAssessor', data.signatureAssessor);
+    restoreSig('signatureLearner', data.signatureLearner);
+
+    // photos
+    const container = document.getElementById('photoContainer');
+    if (container) {
+      container.innerHTML = '';
+      (data.photos || []).forEach(ph => {
+        const div = document.createElement('div');
+        div.className = 'photo-card';
+        div.innerHTML = `
+          <img src="${ph.src}" alt="Photo">
+          <input type="text" class="caption" placeholder="Caption" value="${ph.caption || ''}">
+          <div class="criteria-picker"></div>
+          <div class="controls-row"><button type="button" class="delete-photo">Delete photo</button></div>
+        `;
+        container.appendChild(div);
+      });
+      document.dispatchEvent(new Event('obs-photos-restored'));
+    }
+  }
+
+  function bindV4() {
+    if (saveBtn && !saveBtn.__boundV4) {
+      saveBtn.__boundV4 = true;
+      saveBtn.addEventListener('click', () => {
+        try {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(collectDataV4()));
+          alert('Draft saved locally — reopen this page later to continue.');
+        } catch (err) {
+          window.tempDraftV4 = collectDataV4();
+          alert('Draft temporarily saved for this session — keep this tab open to retain changes.');
+        }
+      }, {capture:true});
+    }
+    if (loadBtn && !loadBtn.__boundV4) {
+      loadBtn.__boundV4 = true;
+      loadBtn.addEventListener('click', () => {
+        try {
+          const d = localStorage.getItem(STORAGE_KEY);
+          if (d) { applyDataV4(JSON.parse(d)); return; }
+        } catch (_){}
+        if (window.tempDraftV4) applyDataV4(window.tempDraftV4);
+      }, {capture:true});
+    }
+    if (clearBtn && !clearBtn.__boundV4) {
+      clearBtn.__boundV4 = true;
+      clearBtn.addEventListener('click', () => {
+        try { localStorage.removeItem(STORAGE_KEY); } catch(_){}
+        alert('Draft cleared');
+      }, {capture:true});
+    }
+  }
+  bindV4();
+})();
+</script>
+<script>
+(function(){
+  // Replace inputs/checkboxes with static text for printing
+  function prepareForPrintClone(cloneDoc, liveDoc){
+    const mapById = {};
+    // map live signature canvases by id -> dataURL
+    liveDoc.querySelectorAll('canvas.sig-canvas, #signature, #signatureAssessor, #signatureLearner').forEach(cv => {
+      if (cv.id) {
+        try { mapById[cv.id] = cv.toDataURL(); } catch(e){}
+      }
+    });
+
+    // Replace inputs and textareas
+    cloneDoc.querySelectorAll('input, textarea, select').forEach(el => {
+      const span = cloneDoc.createElement('span');
+      const type = (el.getAttribute('type')||'').toLowerCase();
+      if (type === 'checkbox') {
+        span.textContent = el.checked ? '☑︎' : '☐';
+      } else {
+        span.textContent = el.value || '';
+      }
+      span.style.whiteSpace = 'pre-wrap';
+      el.replaceWith(span);
+    });
+
+    // Replace signature canvases with images from live data
+    cloneDoc.querySelectorAll('canvas.sig-canvas, #signature, #signatureAssessor, #signatureLearner').forEach(cv => {
+      const id = cv.id;
+      const img = cloneDoc.createElement('img');
+      img.style.maxWidth = '100%';
+      img.style.border = '1px solid #000';
+      if (id && mapById[id]) img.src = mapById[id];
+      cv.replaceWith(img);
+    });
+  }
+
+  // Patch export button and provide a fallback button if needed
+  function exportToPDFCompat(){
+    try {
+      const clone = document.documentElement.cloneNode(true);
+      prepareForPrintClone(clone, document);
+      // remove non-print controls
+      clone.querySelectorAll('.controls, .toggle-criteria, .criteria-panel, .delete-photo, #exportPDFHelper, #openInSafariBtn').forEach(el=>el && el.remove());
+      const w = window.open('', '_blank');
+      if (!w) { alert('Popup blocked. Allow popups for this site to export.'); return; }
+      w.document.open();
+      w.document.write('<!DOCTYPE html><html>' + clone.innerHTML + '</html>');
+      w.document.close();
+      w.onload = function(){ try { w.focus(); w.print(); } catch(e) {} };
+    } catch(e) {
+      alert('Export failed. On iPad Safari you can use Share → Print as a backup.');
+    }
+  }
+
+  // Hook up our export function
+  const nativeExportBtn = document.getElementById('exportPDF');
+  if (nativeExportBtn && !nativeExportBtn.__printCompat) {
+    nativeExportBtn.__printCompat = true;
+    nativeExportBtn.addEventListener('click', function(e){
+      e.preventDefault();
+      exportToPDFCompat();
+    }, {capture:true});
+  }
+  // Provide helper buttons if container exists
+  const helper = document.getElementById('exportPDFHelper');
+  if (helper && !helper.__inited) {
+    helper.__inited = true;
+    helper.innerHTML = ''
+      + '<button id="exportPDF_Fallback2" type="button">Export as PDF (fix)</button> '
+      + '<button id="openInSafariBtn2" type="button">Open in Safari to Print</button>';
+    const btn2 = document.getElementById('exportPDF_Fallback2');
+    if (btn2) btn2.addEventListener('click', exportToPDFCompat);
+    const open2 = document.getElementById('openInSafariBtn2');
+    if (open2) open2.addEventListener('click', ()=>window.open(window.location.href, '_blank'));
+  }
+
+  // Prevent page from moving while signing
+  (function(){
+    let signing = false;
+    function start(){ signing = true; document.documentElement.classList.add('signing'); document.body.classList.add('signing'); }
+    function end(){ signing = false; document.documentElement.classList.remove('signing'); document.body.classList.remove('signing'); }
+    document.querySelectorAll('canvas.sig-canvas, #signature, #signatureAssessor, #signatureLearner').forEach(cv => {
+      cv.addEventListener('pointerdown', (e)=>{ start(); }, {passive:false});
+      cv.addEventListener('pointerup', (e)=>{ end(); }, {passive:false});
+      cv.addEventListener('pointercancel', (e)=>{ end(); }, {passive:false});
+    });
+    // extra safety: while signing, prevent touchmove scrolling
+    window.addEventListener('touchmove', (e)=>{ if (signing) e.preventDefault(); }, {passive:false});
+  })();
+})();
+</script>
+<script>
+(function(){
+  // Unified criteria catalogue: numbers + text
+  const CRITERIA = [
+    {id:'1.1', text:'Identify which workplace health and safety procedures are relevant and comply with duties and obligations as defined by current legislation and organisational procedures'},
+    {id:'1.2', text:'Produce a risk assessment and method statement in accordance with organisational procedures for a given work activity'},
+    {id:'1.3a', text:'Risk assessments'},
+    {id:'1.3b', text:'Method statements'},
+    {id:'1.3c', text:'Safe systems of work'},
+    {id:'2.1', text:'Identify unsafe situations and conditions and take remedial actions'},
+    {id:'2.2a', text:'Materials'},
+    {id:'2.2b', text:'Tools'},
+    {id:'2.2c', text:'Equipment'},
+    {id:'2.3', text:'Identify any high-risk hazards and report to relevant persons responsible for H&S'},
+    {id:'2.4', text:'Apply measures to control health and safety hazards'},
+    {id:'2.5', text:'Select and use correct Personal Protective Equipment'},
+    {id:'3.1', text:'Demonstrate conduct/behaviour so H&S of self and others is not endangered'},
+    {id:'3.2a', text:'Workplace policies (company and site)'},
+    {id:'3.2b', text:'Supplier information'},
+    {id:'3.2c', text:"Manufacturer's instructions"},
+    {id:'3.3', text:'Comply with hazard warning, mandatory instruction and prohibition notices'},
+    {id:'3.4', text:'Ensure safety of work location through correct use of guards, barriers, and notices'},
+    {id:'3.5a', text:'Ladder'},
+    {id:'3.5b', text:'Tower scaffold or MEWP'},
+    {id:'3.5c', text:'Stepladder'},
+    {id:'3.5d', text:'Platform'},
+    {id:'4.1a', text:'Environmental Protection Act'},
+    {id:'4.1b', text:'Hazardous Waste Regulations'},
+    {id:'4.1c', text:'Pollution Prevention & Control Act'},
+    {id:'4.1d', text:'Control of Pollution Act'},
+    {id:'4.1e', text:'Control of Noise at Work Regulations'},
+    {id:'4.1f', text:'Environmental Act'}
+  ];
+
+  function buildCriteriaPanel(selected=[]) {
+    const list = CRITERIA.map(c => {
+      const chk = selected.includes(c.id) ? 'checked' : '';
+      return `<label><input type="checkbox" value="${c.id}" ${chk}> ${c.id} – ${c.text}</label>`;
+    }).join('');
+    return `
+      <div class="criteria-actions">
+        <button type="button" class="toggle-criteria">Select criteria</button>
+        <span class="criteria-hint" style="font-size:12px;">Tick all that apply</span>
+      </div>
+      <div class="criteria-panel">
+        <div class="criteria-filter">
+          <input type="text" class="criteria-search" placeholder="Search criteria...">
+          <button type="button" class="criteria-select-all">Select all</button>
+        </div>
+        <div class="criteria-list">${list}</div>
+        <div class="criteria-actions">
+          <button type="button" class="done-criteria">Done</button>
+          <button type="button" class="clear-criteria">Clear</button>
+        </div>
+      </div>
+      <div class="criteria-tags"></div>
+    `;
+  }
+
+  function updateTags(panel, tagsBox) {
+    const sel = Array.from(panel.querySelectorAll('input[type="checkbox"]:checked')).map(i => i.value);
+    const items = sel.map(id => {
+      const c = CRITERIA.find(x => x.id === id);
+      return `<span class="criteria-tag">${id} – ${c ? c.text : ''}</span>`;
+    }).join('');
+    tagsBox.innerHTML = items;
+  }
+
+  function wireCriteria(card) {
+    const panel = card.querySelector('.criteria-panel');
+    const tagsBox = card.querySelector('.criteria-tags');
+    const search = panel.querySelector('.criteria-search');
+    const selectAll = panel.querySelector('.criteria-select-all');
+
+    card.querySelector('.toggle-criteria').addEventListener('click', () => {
+      panel.classList.toggle('open');
+      search && search.focus();
+    });
+    card.querySelector('.done-criteria').addEventListener('click', () => {
+      panel.classList.remove('open');
+      updateTags(panel, tagsBox);
+    });
+    card.querySelector('.clear-criteria').addEventListener('click', () => {
+      panel.querySelectorAll('input[type="checkbox"]').forEach(i => i.checked = false);
+      updateTags(panel, tagsBox);
+    });
+    panel.addEventListener('change', (e) => {
+      if (e.target && e.target.type === 'checkbox') updateTags(panel, tagsBox);
+    });
+    search.addEventListener('input', () => {
+      const q = search.value.toLowerCase();
+      panel.querySelectorAll('.criteria-list label').forEach(lbl => {
+        const t = lbl.textContent.toLowerCase();
+        lbl.style.display = t.includes(q) ? '' : 'none';
+      });
+    });
+    selectAll.addEventListener('click', () => {
+      panel.querySelectorAll('.criteria-list label').forEach(lbl => {
+        if (lbl.style.display !== 'none') {
+          const cb = lbl.querySelector('input[type="checkbox"]');
+          if (cb) cb.checked = true;
+        }
+      });
+      panel.dispatchEvent(new Event('change', {bubbles:true}));
+    });
+
+    updateTags(panel, tagsBox);
+  }
+
+  function createEnhancedPhotoCard(src, caption='', selected=[]) {
+    const div = document.createElement('div');
+    div.className = 'photo-card';
+    div.innerHTML = `
+      <img src="${src}" alt="Photo">
+      <input type="text" class="caption" placeholder="Caption" value="${caption}">
+      <div class="criteria-picker">${buildCriteriaPanel(selected)}</div>
+      <div class="controls-row"><button type="button" class="delete-photo">Delete photo</button></div>
+    `;
+    wireCriteria(div);
+    div.querySelector('.delete-photo').addEventListener('click', () => {
+      if (confirm('Remove this photo?')) div.remove();
+    });
+    return div;
+  }
+
+  // Replace any old <select> based cards with enhanced panel cards
+  function upgradeExistingCards(){
+    const container = document.getElementById('photoContainer');
+    if (!container) return;
+    container.querySelectorAll('.photo-card').forEach(card => {
+      if (card.__enhanced) return;
+      const img = card.querySelector('img');
+      const src = img ? img.src : '';
+      const capEl = card.querySelector('input[type="text"]');
+      const caption = capEl ? capEl.value : '';
+      const newCard = createEnhancedPhotoCard(src, caption, []);
+      card.replaceWith(newCard);
+      newCard.__enhanced = true;
+    });
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', upgradeExistingCards);
+  } else {
+    upgradeExistingCards();
+  }
+
+  // Override uploader so newly added photos use enhanced cards
+  (function hookUploader(){
+    const input = document.getElementById('photoInput');
+    const container = document.getElementById('photoContainer');
+    if (!input || !container) return;
+    input.addEventListener('change', function(e){
+      const files = Array.from(e.target.files || []);
+      files.forEach(file => {
+        const reader = new FileReader();
+        reader.onload = ev => {
+          const card = createEnhancedPhotoCard(ev.target.result, '', []);
+          container.appendChild(card);
+        };
+        reader.readAsDataURL(file);
+      });
+      input.value = '';
+    }, {capture:true});
+  })();
+
+  // Upgrade Save/Load (v10) to persist per-photo criteria selection too
+  (function storageV10(){
+    const STORAGE_KEY = 'obs-report-unit102-v10';
+    const saveBtn  = document.getElementById('saveDraft');
+    const loadBtn  = document.getElementById('loadDraft');
+    const clearBtn = document.getElementById('clearDraft');
+
+    function collect() {
+      const feedbackEl = document.getElementById('feedback') || document.querySelector('textarea');
+      const sigA = document.getElementById('signatureAssessor');
+      const sigL = document.getElementById('signatureLearner');
+      const photos = Array.from(document.querySelectorAll('#photoContainer .photo-card')).map(card => {
+        const img = card.querySelector('img');
+        const caption = card.querySelector('.caption') ? card.querySelector('.caption').value : '';
+        const selected = Array.from(card.querySelectorAll('.criteria-panel input[type="checkbox"]:checked')).map(i => i.value);
+        return { src: img ? img.src : '', caption, criteria: selected };
+      });
+      return {
+        candidateName: document.getElementById('candidateName')?.value || '',
+        assessmentDate: document.getElementById('assessmentDate')?.value || '',
+        jobDescription: document.getElementById('jobDescription')?.value || '',
+        siteAddress: document.getElementById('siteAddress')?.value || '',
+        assessorName: document.getElementById('assessorName')?.value || '',
+        learnerName: document.getElementById('learnerName')?.value || '',
+        feedback: feedbackEl ? feedbackEl.value : '',
+        signatureAssessor: sigA ? sigA.toDataURL() : '',
+        signatureLearner: sigL ? sigL.toDataURL() : '',
+        ticks: Array.from(document.querySelectorAll('input[type="checkbox"]')).map(cb => cb.checked),
+        photos
+      };
+    }
+
+    function apply(data) {
+      if (!data) return;
+      const map = ['candidateName','assessmentDate','jobDescription','siteAddress','assessorName','learnerName'];
+      map.forEach(k => { const el = document.getElementById(k); if (el) el.value = data[k] || ''; });
+      const feedbackEl = document.getElementById('feedback') || document.querySelector('textarea');
+      if (feedbackEl) feedbackEl.value = data.feedback || '';
+      document.querySelectorAll('input[type="checkbox"]').forEach((cb,i)=>cb.checked = !!(data.ticks && data.ticks[i]));
+
+      function restoreSig(id, img64){
+        const c = document.getElementById(id);
+        if (c && img64) {
+          const ctx = c.getContext('2d');
+          const img = new Image();
+          img.onload = () => { ctx.clearRect(0,0,c.width,c.height); ctx.drawImage(img,0,0); };
+          img.src = img64;
+        }
+      }
+      restoreSig('signatureAssessor', data.signatureAssessor);
+      restoreSig('signatureLearner', data.signatureLearner);
+
+      const container = document.getElementById('photoContainer');
+      if (container) {
+        container.innerHTML = '';
+        (data.photos || []).forEach(ph => {
+          const card = createEnhancedPhotoCard(ph.src, ph.caption || '', ph.criteria || []);
+          container.appendChild(card);
+        });
+      }
+    }
+
+    if (saveBtn && !saveBtn.__v10) {
+      saveBtn.__v10 = true;
+      saveBtn.addEventListener('click', () => {
+        try {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(collect()));
+          alert('Draft saved locally — reopen this page later to continue.');
+        } catch (err) {
+          window.tempDraftV10 = collect();
+          alert('Draft temporarily saved for this session — keep this tab open to retain changes.');
+        }
+      });
+    }
+    if (loadBtn && !loadBtn.__v10) {
+      loadBtn.__v10 = true;
+      loadBtn.addEventListener('click', () => {
+        try {
+          const d = localStorage.getItem(STORAGE_KEY);
+          if (d) { apply(JSON.parse(d)); return; }
+        } catch (_){}
+        if (window.tempDraftV10) apply(window.tempDraftV10);
+      });
+    }
+    if (clearBtn && !clearBtn.__v10) {
+      clearBtn.__v10 = true;
+      clearBtn.addEventListener('click', () => {
+        try { localStorage.removeItem(STORAGE_KEY); } catch(_){}
+        alert('Draft cleared');
+      });
+    }
+  })();
+})();
+</script>
+<script>
+(function(){
+  // Build a map from criteria code -> Obs checkbox input
+  function buildCriteriaObsMap(){
+    const map = {};
+    document.querySelectorAll('.criteria-table').forEach(table => {
+      // Find the header row that contains 'Obs'
+      const headerRow = Array.from(table.querySelectorAll('tr')).find(tr => {
+        return Array.from(tr.children).some(th => th.tagName === 'TH' && /obs/i.test(th.textContent));
+      });
+      if (!headerRow) return;
+      const headers = Array.from(headerRow.children);
+      const obsIndex = headers.findIndex(h => /obs/i.test(h.textContent));
+      if (obsIndex === -1) return;
+
+      let currentMain = null; // e.g., "1.3"
+      Array.from(table.querySelectorAll('tr')).forEach(tr => {
+        // Skip header rows
+        if (tr.querySelector('th')) return;
+
+        const cells = Array.from(tr.children);
+        if (cells.length === 0) return;
+
+        // Detect if first cell holds a main criterion like "1.1", "2.5", "3.2"
+        const firstCellText = (cells[0].textContent || '').trim();
+        const isMain = /^\d+(\.\d+)?$/.test(firstCellText);
+
+        if (isMain) {
+          currentMain = firstCellText; // update current main id
+        }
+
+        // Determine the code for this row
+        let code = null;
+        const letterCell = tr.querySelector('td.letter');
+        if (letterCell && currentMain) {
+          const letter = (letterCell.textContent || '').trim().toLowerCase();
+          if (letter) code = `${currentMain}${letter}`; // e.g., "1.3a"
+        } else if (isMain) {
+          code = firstCellText; // e.g., "2.1"
+        }
+
+        if (!code) return;
+
+        // Find Obs checkbox cell
+        const obsCell = cells[obsIndex];
+        if (!obsCell) return;
+        const obsCb = obsCell.querySelector('input[type="checkbox"]');
+        if (!obsCb) return;
+
+        map[code] = obsCb;
+      });
+    });
+    window.CRITERIA_OBS_MAP = map;
+  }
+
+  function tickObsFor(code){
+    if (!window.CRITERIA_OBS_MAP) buildCriteriaObsMap();
+    const cb = window.CRITERIA_OBS_MAP && window.CRITERIA_OBS_MAP[code];
+    if (cb) cb.checked = true;
+  }
+
+  // Build the map on load
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', buildCriteriaObsMap);
+  } else {
+    buildCriteriaObsMap();
+  }
+
+  // Listen for ticks inside any photo criteria panel
+  document.addEventListener('change', (e) => {
+    if (e.target && e.target.matches('.criteria-panel input[type="checkbox"]')) {
+      if (e.target.checked) {
+        tickObsFor(e.target.value);
+      }
+    }
+  }, true);
+})();
+</script></body>
+</html>
