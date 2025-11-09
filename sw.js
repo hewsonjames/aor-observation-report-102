@@ -1,5 +1,5 @@
 
-const CACHE_NAME = 'obs-report-cache-v8';
+const CACHE_NAME = 'obs-report-cache-v9';
 const ASSETS = [
   './',
   './index.html',

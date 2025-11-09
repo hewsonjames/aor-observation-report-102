@@ -31,6 +31,46 @@
 .signing { touch-action: none; overscroll-behavior: contain; }
 .sig-canvas { touch-action: none; }
 
+
+
+/* ===== Print styles for A4 ===== */
+@page { size: A4; margin: 12mm; }
+@media print {
+  html, body { width: 210mm; }
+  body {
+    font-size: 11pt !important;
+    line-height: 1.25 !important;
+    color: #000 !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  h1 { font-size: 16pt !important; margin: 0 0 6pt 0 !important; }
+  h2 { font-size: 13pt !important; margin: 8pt 0 6pt 0 !important; }
+  #versionBadge, .controls, .toggle-criteria, .criteria-panel, .delete-photo,
+  #exportPDFHelper, #openInSafariBtn, #openInSafariBtn2, #exportPDF_Fallback2,
+  #exportPDF_Fallback, .criteria-actions button { display: none !important; }
+
+  table { width: 100% !important; border-collapse: collapse !important; }
+  th, td { padding: 4pt !important; border: 1px solid #000 !important; vertical-align: top !important; }
+  .criteria-table th, .criteria-table td { font-size: 10pt !important; }
+
+  /* Keep rows together where possible */
+  tr { page-break-inside: avoid; break-inside: avoid; }
+  .photo-card, .sig-card, .asec-table { page-break-inside: avoid; break-inside: avoid; }
+
+  /* Photos */
+  .photo-card img { max-width: 100% !important; height: auto !important; max-height: 120mm !important; }
+  .criteria-tags { font-size: 9pt !important; gap: 3pt !important; }
+  .criteria-tag { padding: 1pt 3pt !important; border-width: 0.5pt !important; }
+
+  /* Signatures: ensure they fit neatly */
+  .sig-canvas { width: 100% !important; height: 90px !important; border: 1px solid #000 !important; }
+  .sig-card label { font-size: 10pt !important; }
+  .sig-grid { gap: 8pt !important; }
+
+  /* Top header inputs render as text via export script, but ensure layout remains tight */
+  .asec-table input { font-size: 10pt !important; padding: 2pt !important; }
+}
 </style>
 <style>
 /* Print-friendly page setup */
@@ -46,9 +86,9 @@
 @media print {
   .sig-card button { display:none !important; }
 }
-</style><meta content="v8" name="x-build-version"/></head>
+</style></head>
 <body>
-<h1>Assessor Observation Report – Unit 102</h1><div id="versionBadge" style="margin:6px 0 12px 0; font-size:12px; display:inline-block; border:1px solid #888; padding:2px 8px; border-radius:10px;">Build v8 — 2025-11-09 13:54 UTC</div><div class="asec-header">
+<h1>Assessor Observation Report – Unit 102</h1><div id="versionBadge" style="margin:6px 0 12px 0; font-size:12px; display:inline-block; border:1px solid #888; padding:2px 8px; border-radius:10px;">Build v9 — 2025-11-09 14:05 UTC (A4 print)</div><div class="asec-header">
 <h2>Applying Health, Safety &amp; Environmental Considerations</h2>
 <table class="asec-table" style="width:100%; border-collapse:collapse; margin:10px 0;">
 <tr>
