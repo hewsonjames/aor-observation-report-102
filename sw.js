@@ -1,5 +1,5 @@
 
-const CACHE_NAME = 'obs-report-cache-v1';
+const CACHE_NAME = 'obs-report-cache-v4';
 const ASSETS = [
   './',
   './index.html',
@@ -17,7 +17,9 @@ self.addEventListener('install', (event) => {
 
 self.addEventListener('activate', (event) => {
   event.waitUntil(
-    caches.keys().then((keys) => Promise.all(keys.map((k) => (k !== CACHE_NAME ? caches.delete(k) : null))))
+    caches.keys().then((keys) =>
+      Promise.all(keys.map((k) => (k !== CACHE_NAME ? caches.delete(k) : null)))
+    )
   );
   self.clients.claim();
 });
