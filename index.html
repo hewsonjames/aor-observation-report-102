@@ -1,0 +1,1878 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Observation Report – Unit 102</title>
+<style>
+  body { font-family: Arial, sans-serif; margin: 20px; background: #fff; color: #000; }
+  table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+  th, td { border: 1px solid #000; padding: 6px; vertical-align: top; }
+  th { text-align: left; background: #f2f2f2; }
+  tr.checked { background-color: #d9fdd3; }
+  td.sub { padding-left: 30px; font-style: italic; }
+  td.letter { width: 30px; text-align: center; }
+  h2 { margin-top: 30px; }
+  textarea, input[type=text] { width: 100%; box-sizing: border-box; }
+  .photo-section, .feedback-section, .signature-section { margin-top: 20px; }
+  .photo-card { border: 1px solid #000; padding: 10px; margin-top: 10px; }
+  img { width: 100%; max-width: 100%; height: auto; display: block; margin-bottom: 8px; }
+  .photo-card { width: 100%; }
+  .photo-card input[type=text] { margin-top: 6px; }
+  select { width: 100%; }
+  canvas { border: 1px solid #000; width: 100%; height: 150px; }
+  button { margin-top: 10px; padding: 6px 12px; }
+
+#signature { touch-action: none; }
+
+
+/* Prevent scroll while signing */
+.signing { touch-action: none; overscroll-behavior: contain; }
+.sig-canvas { touch-action: none; }
+
+
+
+/* ===== Print styles for A4 ===== */
+@page { size: A4; margin: 12mm; }
+@media print {
+  html, body { width: 210mm; }
+  body {
+    font-size: 11pt !important;
+    line-height: 1.25 !important;
+    color: #000 !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  h1 { font-size: 16pt !important; margin: 0 0 6pt 0 !important; }
+  h2 { font-size: 13pt !important; margin: 8pt 0 6pt 0 !important; }
+  #versionBadge, .controls, .toggle-criteria, .criteria-panel, .delete-photo,
+  #exportPDFHelper, #openInSafariBtn, #openInSafariBtn2, #exportPDF_Fallback2,
+  #exportPDF_Fallback, .criteria-actions button { display: none !important; }
+
+  table { width: 100% !important; border-collapse: collapse !important; }
+  th, td { padding: 4pt !important; border: 1px solid #000 !important; vertical-align: top !important; }
+  .criteria-table th, .criteria-table td { font-size: 10pt !important; }
+
+  /* Keep rows together where possible */
+  tr { page-break-inside: avoid; break-inside: avoid; }
+  .photo-card, .sig-card, .asec-table { page-break-inside: avoid; break-inside: avoid; }
+
+  /* Photos */
+  .photo-card img { max-width: 100% !important; height: auto !important; max-height: 120mm !important; }
+  .criteria-tags { font-size: 9pt !important; gap: 3pt !important; }
+  .criteria-tag { padding: 1pt 3pt !important; border-width: 0.5pt !important; }
+
+  /* Signatures: ensure they fit neatly */
+  .sig-canvas { width: 100% !important; height: 90px !important; border: 1px solid #000 !important; }
+  .sig-card label { font-size: 10pt !important; }
+  .sig-grid { gap: 8pt !important; }
+
+  /* Top header inputs render as text via export script, but ensure layout remains tight */
+  .asec-table input { font-size: 10pt !important; padding: 2pt !important; }
+}
+
+
+/* ===  picker UI === */
+.criteria-picker { margin-top: 8px; }
+.criteria-panel { border: 1px solid #000; padding: 8px; margin-top: 6px; max-height: 220px; overflow: auto; display: none; background:#fff; }
+.criteria-panel.open { display: block; }
+.criteria-list label { display: block; margin-bottom: 4px; cursor: pointer; }
+.criteria-tags { margin-top: 6px; display: flex; flex-wrap: wrap; gap: 6px; }
+.criteria-tag { border: 1px solid #000; padding: 2px 6px; font-size: 12px; border-radius: 4px; }
+.photo-card .controls-row { display:flex; gap:8px; flex-wrap:wrap; margin-top:6px; }
+.criteria-filter { display:flex; gap:6px; margin-bottom:8px; }
+.criteria-filter input { flex:1; padding:4px; border:1px solid #000; }
+@media print {
+  .criteria-panel, .toggle-criteria, .criteria-actions button { display:none !important; }
+  .criteria-tags { font-size: 9pt !important; gap: 3pt !important; }
+  .criteria-tag { padding: 1pt 3pt !important; border-width: 0.5pt !important; }
+}
+
+
+/* Unit switcher visibility */
+#unit-102[hidden], #unit-118[hidden] { display:none !important; }
+
+
+/* Photo rendering: contain within a fixed frame without distortion */
+.photo-card { border: 1px solid #000; padding: 10px; margin-top: 10px; }
+.photo-frame {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  background: #f9f9f9;
+  border: 1px solid #ccc;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+.photo-frame img {
+  max-width: 100%;
+  max-height: 100%;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  image-orientation: from-image;
+  display: block;
+}
+/* Fallback if aspect-ratio not supported */
+@supports not (aspect-ratio: 1) {
+  .photo-frame { height: 300px; }
+}
+/* Print tweaks to keep photos neat on A4 */
+@media print {
+  .photo-frame { aspect-ratio: auto; height: 70mm; }
+  .photo-card { break-inside: avoid; page-break-inside: avoid; }
+}
+
+
+/* Multi-criteria picker (checkbox list) */
+.criteria-picker {
+  border: 1px solid #ccc;
+  padding: 8px;
+  margin-top: 8px;
+  max-height: 180px;
+  overflow: auto;
+  background: #fafafa;
+}
+.criteria-picker h4 {
+  margin: 0 0 6px 0;
+  font-size: 14px;
+}
+.criteria-picker label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  padding: 2px 0;
+}
+.criteria-picker .small {
+  font-size: 12px;
+  opacity: 0.8;
+}
+.photo-card-actions {
+  display: flex; gap: 8px; margin-top: 8px;
+}
+.photo-card-actions button { padding: 6px 10px; }
+
+
+/* Ensure criteria picker is visible under each photo */
+.photo-card .criteria-picker { margin-top: 8px; border: 1px solid #ddd; padding: 8px; background: #fff; }
+.photo-card .criteria-picker h4 { font-size: 14px; margin: 0 0 6px; }
+.photo-card .criteria-picker .grid { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 4px 10px; }
+@media print { .criteria-picker { border: 1px solid #ccc; } }
+
+
+/* Criteria summary under photos */
+.criteria-summary { margin-top: 8px; padding: 8px; background: #f5f5f5; border: 1px solid #ddd; }
+.criteria-summary h5 { margin: 0 0 6px; font-size: 14px; }
+.criteria-summary ul { margin: 0; padding-left: 18px; }
+.criteria-summary li { font-size: 14px; }
+.photo-card-actions { display: flex; gap: 8px; margin-top: 8px; }
+.criteria-actions { display: flex; gap: 8px; margin-top: 8px; }
+.criteria-actions button { padding: 6px 10px; }
+
+
+/* Stronger green highlight for any row with any checkbox checked */
+tr.checked { background-color: #d9fdd3 !important; }
+</style>
+<style>
+/* Print-friendly page setup */
+@media print {
+  .controls, .toggle-criteria, .criteria-panel, .delete-photo, #exportPDFHelper, #openInSafariBtn { display: none !important; }
+  body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  @page { size: A4; margin: 12mm; }
+}
+#storageStatus {
+  display:inline-block; margin-left:8px; font-size:12px; padding:2px 6px; border:1px solid #888; border-radius:10px;
+}
+</style><style>
+@media print {
+  .sig-card button { display:none !important; }
+}
+</style></head>
+<body>
+<h1>Assessor Observation Report – City &amp; Guilds 5357-102</h1>
+<div class="unit-switch" style="margin:10px 0 14px 0; display:flex; gap:8px; align-items:center;">
+<label for="unitSelect"><strong>Unit:</strong></label>
+<select id="unitSelect">
+<option value="102">102 — Health, Safety &amp; Environmental</option>
+<option value="118">118 — Terminate &amp; Connect Conductors</option>
+<option value="106">106 — Organise &amp; Oversee Work Environment</option><option value="109">109 — Apply Design &amp; Installation</option><option value="113">113 — Inspect, Test and Commission Electrical Systems</option><option value="115">115 — Apply Fault Diagnosis and Rectification</option></select>
+</div>
+<div class="asec-header">
+<h2>Applying Health, Safety &amp; Environmental Considerations</h2>
+<table class="asec-table" style="width:100%; border-collapse:collapse; margin:10px 0;">
+<tr>
+<th style="text-align:left; border:1px solid #000; padding:6px; width:180px;">Candidate name</th>
+<td style="border:1px solid #000; padding:6px;">
+<input id="candidateName" style="width:100%; box-sizing:border-box;" type="text"/>
+</td>
+<th style="text-align:left; border:1px solid #000; padding:6px; width:100px;">Date</th>
+<td style="border:1px solid #000; padding:6px; width:220px;">
+<input id="assessmentDate" style="width:100%; box-sizing:border-box;" type="date"/>
+</td>
+</tr>
+<tr>
+<th style="text-align:left; border:1px solid #000; padding:6px;">Job Description</th>
+<td colspan="3" style="border:1px solid #000; padding:6px;">
+<input id="jobDescription" style="width:100%; box-sizing:border-box;" type="text"/>
+</td>
+</tr>
+<tr>
+<th style="text-align:left; border:1px solid #000; padding:6px;">Site address</th>
+<td colspan="3" style="border:1px solid #000; padding:6px;">
+<input id="siteAddress" style="width:100%; box-sizing:border-box;" type="text"/>
+</td>
+</tr>
+</table>
+</div>
+<!-- Section 1 -->
+<!-- Section 2 -->
+<!-- Section 3 -->
+<!-- Section 4 -->
+<div data-unit="102" id="unit-102"><table class="criteria-table">
+<tr><th colspan="7">1 Apply relevant health &amp; safety legislation in the workplace.</th></tr>
+<tr><th>Criteria</th><th>Sub</th><th>Description</th><th>Obs</th><th>WT</th><th>PE</th></tr>
+<tr><td>1.1</td><td></td><td>Identify which workplace health and safety procedures are relevant to the working environment and comply with their duties and obligations as defined by current legislation and organisational procedures</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr>
+<tr><td>1.2</td><td></td><td>Produce a risk assessment and method statement in accordance with organisational procedures for a given work activity.</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr>
+<tr><td rowspan="4">1.3</td><td></td><td>Work within the requirements of:</td><td></td><td></td><td></td></tr>
+<tr><td class="letter">a</td><td class="sub">Risk assessments</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr>
+<tr><td class="letter">b</td><td class="sub">Method statements</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr>
+<tr><td class="letter">c</td><td class="sub">Safe systems of work</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr>
+</table><table class="criteria-table">
+<tr><th colspan="7">2 Assess the work environment for hazards and identify remedial actions in accordance with Health and Safety legislation</th></tr>
+<tr><th>Criteria</th><th>Sub</th><th>Description</th><th>Obs</th><th>WT</th><th>PE</th></tr>
+<tr><td>2.1</td><td></td><td>Identify unsafe situations and conditions and take remedial actions</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr>
+<tr><td rowspan="4">2.2</td><td></td><td>Assess the work environment and revise work practices accordingly to take into account hazards which could cause harm, including the handling of potentially hazardous:</td><td></td><td></td><td></td></tr>
+<tr><td class="letter">a</td><td class="sub">Materials</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr>
+<tr><td class="letter">b</td><td class="sub">Tools</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr>
+<tr><td class="letter">c</td><td class="sub">Equipment</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr>
+<tr><td>2.3</td><td></td><td>Identify any hazards which may present a high risk and report their presence to relevant persons who have overall responsibility for health and safety in the workplace</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr>
+<tr><td>2.4</td><td></td><td>Apply measures to control health and safety hazards.</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr>
+<tr><td>2.5</td><td></td><td>Select and use correct Personal Protective Equipment.</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr>
+</table><table class="criteria-table">
+<tr><th colspan="7">3 Apply methods and procedures to ensure work on site is in accordance with Health and Safety legislation</th></tr>
+<tr><th>Criteria</th><th>Sub</th><th>Description</th><th>Obs</th><th>WT</th><th>PE</th></tr>
+<tr><td>3.1</td><td></td><td>Demonstrate a level of personal conduct and behaviour within the workplace, to ensure that the health and safety of themselves and others is not endangered</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr>
+<tr><td rowspan="4">3.2</td><td></td><td>Apply procedures to ensure the safe use, maintenance and storage of tools, plant and equipment as stipulated in:</td><td></td><td></td><td></td></tr>
+<tr><td class="letter">a</td><td class="sub">Workplace policies (company and site)</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr>
+<tr><td class="letter">b</td><td class="sub">Supplier information</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr>
+<tr><td class="letter">c</td><td class="sub">Manufacturer’s instructions</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr>
+<tr><td>3.3</td><td></td><td>Comply with hazard warning, mandatory instruction and prohibition notices</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr>
+<tr><td>3.4</td><td></td><td>Apply procedures to ensure the safety of the work location through the correct use of guards, barriers, and notices</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr>
+<tr><td rowspan="5">3.5</td><td></td><td>Use access equipment correctly<br/>Range – assess TWO from the following:</td><td></td><td></td><td></td></tr>
+<tr><td class="letter">a</td><td class="sub">Ladder</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr>
+<tr><td class="letter">b</td><td class="sub">Tower scaffold or MEWP</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr>
+<tr><td class="letter">c</td><td class="sub">Stepladder</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr>
+<tr><td class="letter">d</td><td class="sub">Platform</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr>
+</table><table class="criteria-table">
+<tr><th colspan="7">4 Be able to work in accordance with environmental legislation for electrical services.</th></tr>
+<tr><th>Criteria</th><th>Sub</th><th>Description</th><th>Obs</th><th>WT</th><th>PE</th></tr>
+<tr><td rowspan="7">4.1</td><td></td><td>Demonstrate appropriate procedures for the safe handling, storage &amp; disposal of hazardous materials &amp; products. (Cover one):</td><td></td><td></td><td></td></tr>
+<tr><td class="letter">a</td><td class="sub">Environmental Protection Act</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr>
+<tr><td class="letter">b</td><td class="sub">Hazardous Waste Regulations</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr>
+<tr><td class="letter">c</td><td class="sub">Pollution Prevention &amp; Control Act</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr>
+<tr><td class="letter">d</td><td class="sub">Control of Pollution Act</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr>
+<tr><td class="letter">e</td><td class="sub">Control of Noise at Work Regulations</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr>
+<tr><td class="letter">f</td><td class="sub">Environmental Act</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr>
+</table></div><div data-unit="118" id="unit-118" style="display:none;"><table class="criteria-table"><tr><th colspan="7">1 Prepare to terminate and connect cables and conductors</th></tr><tr><th>Criteria</th><th>Sub</th><th>Description</th><th>OTJ hrs</th><th>Obs</th><th>WT</th><th>PE</th></tr><tr><td>1</td><td></td><td>Learning Outcome: Prepare to terminate and connect cables and conductors</td><td></td><td></td><td></td><td></td></tr><tr><td>1.1</td><td></td><td>Evaluate and apply appropriate procedures to include:</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr><tr><td></td><td class="letter">a</td><td class="sub">Selecting appropriate tools/equipment to enable termination and connection</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr><tr><td></td><td class="letter">b</td><td class="sub">Adopting appropriate PPE</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr><tr><td></td><td class="letter">c</td><td class="sub">Following a safe system of work (e.g., risk assessment, method statement, permit to work procedure)</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr><tr><td>1.2</td><td></td><td>Assess and confirm it is safe to complete termination and connection in terms of:</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr><tr><td></td><td class="letter">a</td><td class="sub">Checking for presence of supply / carrying out safe isolation</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr><tr><td></td><td class="letter">b</td><td class="sub">Mechanical soundness of the electrical equipment to be connected to</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr><tr><td></td><td class="letter">c</td><td class="sub">Checking for unsafe situations</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr></table><table class="criteria-table"><tr><th colspan="7">2 Terminate and connect conductors and cables</th></tr><tr><th>Criteria</th><th>Sub</th><th>Description</th><th>OTJ hrs</th><th>Obs</th><th>WT</th><th>PE</th></tr><tr><td>2</td><td></td><td>Learning Outcome: Terminate and connect conductors and cables</td><td></td><td></td><td></td><td></td></tr><tr><td>2.1</td><td></td><td>Terminate and connect cables and conductors in accordance with manufacturer’s instructions, BS7671, and any relevant drawing and specification</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr><tr><td></td><td></td><td>Range – Cover FIVE from the following:</td><td></td><td></td><td></td><td></td></tr><tr><td></td><td class="letter">a</td><td class="sub">Single core (singles)</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr><tr><td></td><td class="letter">b</td><td class="sub">Multi-core insulated cable</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr><tr><td></td><td class="letter">c</td><td class="sub">PVC/PVC flat profile cable</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr><tr><td></td><td class="letter">d</td><td class="sub">MICC</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr><tr><td></td><td class="letter">e</td><td class="sub">Fire performance</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr><tr><td></td><td class="letter">f</td><td class="sub">SWA cable</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr><tr><td></td><td class="letter">g</td><td class="sub">GSWB galvanised steel wire braid</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr><tr><td></td><td class="letter">h</td><td class="sub">Data cable/PoE</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr><tr><td></td><td class="letter">i</td><td class="sub">DC Cabling</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr><tr><td>2.2</td><td></td><td>Connect electrical equipment in accordance with manufacturer’s instructions, BS7671, and any relevant drawing or specification</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr><tr><td></td><td></td><td>Range – Cover FIVE from the following:</td><td></td><td></td><td></td><td></td></tr><tr><td></td><td class="letter">a</td><td class="sub">Isolators / switches</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr><tr><td></td><td class="letter">b</td><td class="sub">Socket-outlets</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr><tr><td></td><td class="letter">c</td><td class="sub">Distribution boards / Consumer control units</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr><tr><td></td><td class="letter">d</td><td class="sub">Luminaires</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr><tr><td></td><td class="letter">e</td><td class="sub">Electric motors / motor control equipment</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr><tr><td></td><td class="letter">f</td><td class="sub">Over-current protective devices</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr><tr><td></td><td class="letter">g</td><td class="sub">Earthing terminals</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr><tr><td></td><td class="letter">h</td><td class="sub">Control panels</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr><tr><td></td><td class="letter">i</td><td class="sub">Data socket outlets or data connections</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr><tr><td></td><td class="letter">j</td><td class="sub">Fire detection / alarm components</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr><tr><td></td><td class="letter">k</td><td class="sub">Other appropriate equipment (e.g., heating system components)</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr><tr><td>2.3</td><td></td><td>Terminate and connect conductors, using appropriate methods</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr><tr><td></td><td></td><td>Range – Cover TWO from the following:</td><td></td><td></td><td></td><td></td></tr><tr><td></td><td class="letter">a</td><td class="sub">Screwing</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr><tr><td></td><td class="letter">b</td><td class="sub">Crimping</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr><tr><td></td><td class="letter">c</td><td class="sub">Soldering</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr><tr><td></td><td class="letter">d</td><td class="sub">Non-screw Compression</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr><tr><td></td><td class="letter">e</td><td class="sub">Insulation displacement</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr><tr><td>2.4</td><td></td><td>Ensure that terminations and connections are electrically and mechanically sound (e.g., by simple inspecting and testing terminations)</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr><tr><td>2.5</td><td></td><td>Ensure cables have appropriate identification in accordance with BS7671</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr></table></div><div data-unit="106" id="unit-106" style="display:none;"><table class="criteria-table"><tr><th colspan="7">1 Provide relevant people with technical and functional information</th></tr><tr><th>Criteria</th><th>Sub</th><th>Description</th><th>OTJ hrs</th><th>Obs</th><th>WT</th><th>PE</th></tr><tr><td>1</td><td></td><td>Learner Outcome: Be able to provide relevant people with technical and functional information for work on electrical systems and equipment:</td><td></td><td></td><td></td><td></td></tr><tr><td>1.1</td><td></td><td>Liaise with relevant people to evaluate the information they require to ensure that systems, equipment, or components can be operated safely and effectively</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr><tr><td>1.2</td><td></td><td>Identify appropriate technical and functional information that is required for the work activity</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr><tr><td>1.3</td><td></td><td>Provide information in a timely, courteous, suitable, and professional manner in accordance with organisational procedures and engineering standards</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr></table><table class="criteria-table"><tr><th colspan="7">2 Oversee Health and Safety during work</th></tr><tr><th>Criteria</th><th>Sub</th><th>Description</th><th>OTJ hrs</th><th>Obs</th><th>WT</th><th>PE</th></tr><tr><td>2</td><td></td><td>Learner Outcome: Be able to oversee Health and Safety during work on electrical systems and equipment:</td><td></td><td></td><td></td><td></td></tr><tr><td>2.1</td><td></td><td>Produce, or revise generic, risk assessments and method statements, to cover their own work and others working the area (colleagues and other operatives) in accordance with their level of responsibility</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr><tr><td>2.2</td><td></td><td>Implement suitable procedures to confirm that work is being completed in accordance with health and safety legislation and industry standards</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr></table><table class="criteria-table"><tr><th colspan="7">3 Co-ordinate liaison with other relevant persons</th></tr><tr><th>Criteria</th><th>Sub</th><th>Description</th><th>OTJ hrs</th><th>Obs</th><th>WT</th><th>PE</th></tr><tr><td>3</td><td></td><td>Learner Outcome: Be able to co-ordinate liaison with other relevant persons during work activities:</td><td></td><td></td><td></td><td></td></tr><tr><td>3.1</td><td></td><td>Select effective procedures to ensure co-ordination with other workers / contractors, including steps to resolve issues which are outside the scope of their job role</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr><tr><td>3.2</td><td></td><td>Evaluate and apply communication techniques that are clear, accurate and appropriate to the situation</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr><tr><td>3.3</td><td></td><td>Demonstrate working effectively with colleagues to enhance performance (Such as: undertaking work to one’s best ability, being a good employee/worker. Co-operating with the employer and/or customer during work activities.)</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr></table><table class="criteria-table"><tr><th colspan="7">4 Organise and oversee work activities and operations</th></tr><tr><th>Criteria</th><th>Sub</th><th>Description</th><th>OTJ hrs</th><th>Obs</th><th>WT</th><th>PE</th></tr><tr><td>4</td><td></td><td>Learner Outcome: Be able to organise and oversee work activities and operations</td><td></td><td></td><td></td><td></td></tr><tr><td>4.1</td><td></td><td>Organise operatives by allocating duties and responsibilities to make the best use of their competence and skills</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr><tr><td>4.2</td><td></td><td>Monitor the work of operatives to ensure it is in accordance with:</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr><tr><td></td><td class="letter">a</td><td class="sub">Industry working practices</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr><tr><td></td><td class="letter">b</td><td class="sub">The programme of work</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr><tr><td></td><td class="letter">c</td><td class="sub">Health &amp; Safety requirements</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr><tr><td></td><td class="letter">d</td><td class="sub">Cost effectiveness</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr><tr><td></td><td class="letter">e</td><td class="sub">Environmental considerations</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr><tr><td>4.3</td><td></td><td>Evaluate and apply appropriate procedures to correct issues that arise during work activities</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr></table><table class="criteria-table"><tr><th colspan="7">5 Organise a programme for work on systems and equipment</th></tr><tr><th>Criteria</th><th>Sub</th><th>Description</th><th>OTJ hrs</th><th>Obs</th><th>WT</th><th>PE</th></tr><tr><td>5</td><td></td><td>Learner Outcome: Be able to organise a programme for working on electrical systems and equipment.</td><td></td><td></td><td></td><td></td></tr><tr><td>5.1</td><td></td><td>Produce a simple programme of work from the work specification, including requirements for the following:</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr><tr><td></td><td class="letter">a</td><td class="sub">Estimation of the amount of time required for completion of the work</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr><tr><td></td><td class="letter">b</td><td class="sub">Liaison with other trades may be necessary</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr><tr><td>5.2</td><td></td><td>Communicate with others clearly and concisely.</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr><tr><td>5.3</td><td></td><td>Assess situations when it is necessary to liaise with other relevant parties to resolve issues</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr></table><table class="criteria-table"><tr><th colspan="7">6 Organise resource requirements for work on systems and equipment</th></tr><tr><th>Criteria</th><th>Sub</th><th>Description</th><th>OTJ hrs</th><th>Obs</th><th>WT</th><th>PE</th></tr><tr><td>6</td><td></td><td>Learner Outcome: Be able to organise the resource requirements for the work on electrical systems and equipment.</td><td></td><td></td><td></td><td></td></tr><tr><td>6.1</td><td></td><td>Organise the provision of resources</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr><tr><td>6.1R</td><td></td><td>Range – Cover all the following:</td><td></td><td></td><td></td><td></td></tr><tr><td></td><td class="letter">a</td><td class="sub">Materials</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr><tr><td></td><td class="letter">b</td><td class="sub">Fixings</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr><tr><td></td><td class="letter">c</td><td class="sub">Plant</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr><tr><td></td><td class="letter">d</td><td class="sub">Labour</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr><tr><td></td><td class="letter">e</td><td class="sub">Tools</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr><tr><td>6.2</td><td></td><td>Confirm that materials available are:</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr><tr><td></td><td class="letter">a</td><td class="sub">The right type</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr><tr><td></td><td class="letter">b</td><td class="sub">Fit for purpose.</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr><tr><td></td><td class="letter">c</td><td class="sub">In the correct quantity.</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr><tr><td></td><td class="letter">d</td><td class="sub">Suitable for the work to be completed cost efficiently.</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr><tr><td>6.3</td><td></td><td>Ensure that resources are undamaged at the point of delivery</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr><tr><td>6.4</td><td></td><td>Demonstrate effective measures which ensure the safe and effective storage of materials, tools and equipment in the work location</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr></table></div><div data-unit="109" id="unit-109" style="display:none;"><table class="criteria-table"><tr><th colspan="7">1 Prepare to install wiring systems, enclosures and associated equipment</th></tr><tr><th>Criteria</th><th>Sub</th><th>Description</th><th>OTJ hrs</th><th>Obs</th><th>WT</th><th>PE</th></tr><tr><td>1</td><td></td><td>Prepare to install wiring systems, enclosures, and associated equipment</td><td></td><td></td><td></td><td></td></tr><tr><td>1.1</td><td></td><td>Access and apply appropriate procedures to include:</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr><tr><td></td><td class="letter">a</td><td class="sub">Adopting appropriate PPE</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr><tr><td></td><td class="letter">b</td><td class="sub">Following a safe system of work (e.g., working in accordance with a risk assessment and method statement)</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr><tr><td></td><td class="letter">c</td><td class="sub">Selecting appropriate tools / equipment for the installation work</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr><tr><td>1.2</td><td></td><td>Prepare to install wiring systems, enclosures and associated equipment, to include:</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr><tr><td></td><td class="letter">a</td><td class="sub">Confirmation of secure site storage facilities for tools, equipment, materials, and components</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr><tr><td></td><td class="letter">b</td><td class="sub">Select materials (equipment and components) in accordance with the installation specification</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr><tr><td></td><td class="letter">c</td><td class="sub">Report any pre-work damage / defects to existing equipment or building features, to the relevant person (such as: customer/ client / line manager)</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr><tr><td></td><td class="letter">d</td><td class="sub">Confirmation of site readiness for installation work to begin</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr><tr><td></td><td class="letter">e</td><td class="sub">Confirm authorisation for installation work to start</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr><tr><td>1.3</td><td></td><td>Use documentation to confirm that materials and equipment is of the correct quantity and is free from damage</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr><tr><td>1.4</td><td></td><td>Ensure the planned locations for the wiring system and associated equipment are compatible with other building services (e.g. gas, water or other electrical services)</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr><tr><td>1.5</td><td></td><td>Check that planned locations for the wiring system in terms of:</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr><tr><td></td><td class="letter">a</td><td class="sub">Cosmetic appearance</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr><tr><td></td><td class="letter">b</td><td class="sub">External influences</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr></table><table class="criteria-table"><tr><th colspan="7">2 Interpret appropriate information</th></tr><tr><th>Criteria</th><th>Sub</th><th>Description</th><th>OTJ hrs</th><th>Obs</th><th>WT</th><th>PE</th></tr><tr><td>2</td><td></td><td>Learner Outcome: Interpret appropriate information for the installation of wiring systems, enclosures and associated equipment</td><td></td><td></td><td></td><td></td></tr><tr><td>2.1</td><td></td><td>Use sources of information to enable the installation of wiring systems, enclosures, and associated equipment to be carried out including:</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr><tr><td></td><td class="letter">a</td><td class="sub">Specifications</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr><tr><td></td><td class="letter">b</td><td class="sub">Work schedules/programmes</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr><tr><td></td><td class="letter">c</td><td class="sub">Manufacturer’s instructions</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr><tr><td></td><td class="letter">d</td><td class="sub">Layout drawings</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr><tr><td></td><td class="letter">e</td><td class="sub">Other appropriate source of information (e.g. BS7671, other plans or diagrams, approved documents, building regulations)</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr></table><table class="criteria-table"><tr><th colspan="7">3 Install wiring systems and equipment per regulations</th></tr><tr><th>Criteria</th><th>Sub</th><th>Description</th><th>OTJ hrs</th><th>Obs</th><th>WT</th><th>PE</th></tr><tr><td>3</td><td></td><td>Install wiring systems, and equipment in accordance with current relevant statutory and non-statutory regulations</td><td></td><td></td><td></td><td></td></tr><tr><td>3.1</td><td></td><td>Use appropriate measuring and marking out techniques which are appropriate to the wiring system, wiring enclosure and/or associated equipment that is being installed</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr><tr><td>3.2</td><td></td><td>Install cables in accordance with the wiring regulations, the installation specification and programme of work</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr><tr><td>3.2R</td><td></td><td>Range – Cover FIVE of the following:</td><td></td><td></td><td></td><td></td></tr><tr><td></td><td class="letter">a</td><td class="sub">Single core (singles)</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr><tr><td></td><td class="letter">b</td><td class="sub">Multi-core insulated</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr><tr><td></td><td class="letter">c</td><td class="sub">PVC / PVC flat profile cable</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr><tr><td></td><td class="letter">d</td><td class="sub">MICC</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr><tr><td></td><td class="letter">e</td><td class="sub">Fire performance</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr><tr><td></td><td class="letter">f</td><td class="sub">SWA cable</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr><tr><td></td><td class="letter">g</td><td class="sub">GSWB galvanised steel wire braid</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr><tr><td></td><td class="letter">h</td><td class="sub">Data/PoE</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr><tr><td></td><td class="letter">i</td><td class="sub">DC Cabling</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr><tr><td>3.3</td><td></td><td>Install wiring systems in accordance with BS7671, the installation specification and agreed planned programme of work</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr><tr><td>3.3R</td><td></td><td>Containment ranges:</td><td></td><td></td><td></td><td></td></tr><tr><td></td><td class="letter">PVC</td><td class="sub">PVC containment – minimum of ONE from: PVC Trunking; PVC Conduit</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr><tr><td></td><td class="letter">Metallic</td><td class="sub">Metallic containment – minimum of ONE from: Metallic conduit; Metallic Trunking</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr><tr><td></td><td class="letter">X</td><td class="sub">Minimum of ONE from: Cable tray; Cable basket; Ladder systems; Ducting; Modular wiring systems; Busbar system or power track</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr><tr><td>3.4</td><td></td><td>Install the types of electrical equipment and accessories, in accordance with the IET regulations, the installation specification, manufacturer’s instructions and the programme of work</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr><tr><td>3.4R</td><td></td><td>Range – Cover FIVE from the following:</td><td></td><td></td><td></td><td></td></tr><tr><td></td><td class="letter">a</td><td class="sub">Isolators / switches</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr><tr><td></td><td class="letter">b</td><td class="sub">Socket outlets</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr><tr><td></td><td class="letter">c</td><td class="sub">Distribution –boards / consumer control units</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr><tr><td></td><td class="letter">d</td><td class="sub">Overcurrent protective devices</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr><tr><td></td><td class="letter">e</td><td class="sub">Luminaries</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr><tr><td></td><td class="letter">f</td><td class="sub">Data socket outlets / WiFi Router</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr><tr><td></td><td class="letter">g</td><td class="sub">Electric Vehicle charging point</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr><tr><td></td><td class="letter">h</td><td class="sub">Other appropriate equipment (e.g. heating system components, control equipment, fire detection components, smart camera, smart lighting or heating control) (N.B an individual smart lamp is not sufficient)</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr><tr><td>3.5</td><td></td><td>Communicate with others professionally and appropriately to aid the effective installation of the wiring system / equipment</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr><tr><td>3.6</td><td></td><td>Dispose of waste materials in accordance with site procedures and statutory requirements</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr></table><table class="criteria-table"><tr><th colspan="7">4 Confirm the quality of the completed work</th></tr><tr><th>Criteria</th><th>Sub</th><th>Description</th><th>OTJ hrs</th><th>Obs</th><th>WT</th><th>PE</th></tr><tr><td>4</td><td></td><td>Confirm the quality of the completed work.</td><td></td><td></td><td></td><td></td></tr><tr><td>4.1</td><td></td><td>Ensure the installed wiring system(s) and enclosures meet specified requirements including that they:</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr><tr><td></td><td class="letter">a</td><td class="sub">Are the correct type and fit for purpose</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr><tr><td></td><td class="letter">b</td><td class="sub">Are installed in accordance with BS7671</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr><tr><td></td><td class="letter">c</td><td class="sub">Meet the installation specification / other relevant plans / instructions</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr><tr><td></td><td class="letter">d</td><td class="sub">Are installed in accordance with any relevant manufacturer’s instructions</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr></table></div><div data-unit="113" id="unit-113" style="display:none;"><table class="criteria-table"><tr><th colspan="7">1 Be able to confirm safety of the system and equipment prior to completion of inspection, testing, and commissioning in accordance with statutory and non-statutory regulations</th></tr><tr><th>Criteria</th><th>Sub</th><th>Description</th><th>OTJ hrs</th><th>Obs</th><th>WT</th><th>PE</th></tr><tr><td>1.1</td><td></td><td>Carry out safe isolation procedures in accordance with regulatory requirements for electrical installations</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr><tr><td>1.2</td><td></td><td>Ensure the health and safety of themselves and others within the work location during inspection, testing and commissioning</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr><tr><td>1.3</td><td></td><td>Check the safety of electrical systems prior to the commencement of inspection, testing and commissioning</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr></table><table class="criteria-table"><tr><th colspan="7">2 Be able to Inspect electrical systems and equipment</th></tr><tr><th>Criteria</th><th>Sub</th><th>Description</th><th>OTJ hrs</th><th>Obs</th><th>WT</th><th>PE</th></tr><tr><td>2.1</td><td></td><td>Assess whether the safe system of work is appropriate to the work activity</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr><tr><td>2.2</td><td></td><td>Carry out a visual inspection in accordance with the requirements of the installation specification, BS 7671 and IET Guidance Note 3.</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr><tr><td>2.3</td><td></td><td>Complete a Schedule of Inspections in accordance with BS7671 and Guidance Note 3 making technical decisions.</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr></table><table class="criteria-table"><tr><th colspan="7">3 Be able to test and commission electrical systems and equipment</th></tr><tr><th>Criteria</th><th>Sub</th><th>Description</th><th>OTJ hrs</th><th>Obs</th><th>WT</th><th>PE</th></tr><tr><td>3.1</td><td></td><td>Select the correct test instruments and their accessories for tests</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr><tr><td>3.2</td><td></td><td>Carry out tests in accordance with the installation specification and BS7671 and manufacturer’s instructions</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr><tr><td>3.2R</td><td></td><td>Range:</td><td></td><td></td><td></td><td></td></tr><tr><td></td><td class="letter">a</td><td class="sub">Continuity</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr><tr><td></td><td class="letter">b</td><td class="sub">Insulation resistance</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr><tr><td></td><td class="letter">c</td><td class="sub">Polarity</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr><tr><td></td><td class="letter">d</td><td class="sub">Earth fault loop impedance / earth electrode</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr><tr><td></td><td class="letter">e</td><td class="sub">Prospective fault current</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr><tr><td></td><td class="letter">f</td><td class="sub">RCD operation</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr><tr><td></td><td class="letter">g</td><td class="sub">Functional testing</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr><tr><td>3.3</td><td></td><td>Analyse and verify test results reporting all findings to relevant persons, as appropriate</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr><tr><td>3.3R</td><td></td><td>Range:</td><td></td><td></td><td></td><td></td></tr><tr><td></td><td class="letter">a</td><td class="sub">Representatives of other services / colleagues</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr><tr><td></td><td class="letter">b</td><td class="sub">Customers / clients</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr><tr><td>3.4</td><td></td><td>Complete in accordance with BS7671 and IET Guidance Note 3:</td><td></td><td></td><td></td><td></td></tr><tr><td></td><td class="letter">a</td><td class="sub">Electrical Installation Certificate; schedule of inspections; schedule of results</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr><tr><td></td><td class="letter">b</td><td class="sub">Minor Electrical Installation Works Certificate.</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr><tr><td>3.5</td><td></td><td>Complete the handover of electrical systems and equipment to relevant persons including the provision of accurate and complete documentation regarding the completed inspection, testing, commissioning, and customer satisfaction</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr><tr><td>3.6</td><td></td><td>Demonstrate to the customer / client that the operation of the circuits, equipment and components are in accordance with the installation specification and customer / client requirements.</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr></table></div><div data-unit="115" id="unit-115" style="display:none;"><table class="criteria-table"><tr><th colspan="7">1 Prepare to carry out fault diagnosis</th></tr><tr><th>Criteria</th><th>Sub</th><th>Description</th><th>OTJ hrs</th><th>Obs</th><th>WT</th><th>PE</th></tr><tr><td>1.1</td><td></td><td>Check it is safe to carry out fault diagnosis.</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr><tr><td>1.2</td><td></td><td>Inform the relevant personnel of the fault diagnosis work (such as personnel on the premises, users of electrical equipment).</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr><tr><td>1.3</td><td></td><td>Carry out the safe isolation procedure.</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr><tr><td>1.4</td><td></td><td>Evaluate and apply appropriate methods to ensure the safety of themselves and others when diagnosing and correcting electrical faults.</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr></table><table class="criteria-table"><tr><th colspan="7">2 Carry out fault diagnosis</th></tr><tr><th>Criteria</th><th>Sub</th><th>Description</th><th>OTJ hrs</th><th>Obs</th><th>WT</th><th>PE</th></tr><tr><td>2.1</td><td></td><td>Communicate effectively with relevant personnel (e.g., customer, premises manager etc) to ascertain the nature of the fault.</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr><tr><td>2.2</td><td></td><td>Select and interpret appropriate documents (e.g., layout drawings, schematic diagrams etc) which relate to the electrical systems and equipment being worked upon.</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr><tr><td>2.3</td><td></td><td>Access and communicate potential disruption that may be a consequence of the fault diagnosis and correction work to relevant people:</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr><tr><td></td><td class="letter">a</td><td class="sub">Other workers/colleagues</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr><tr><td></td><td class="letter">b</td><td class="sub">Customer/clients</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr><tr><td>2.4</td><td></td><td>Carry out relevant inspections of electrical equipment analysing findings.</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr><tr><td>2.5</td><td></td><td>Confirm test instruments are fit for purpose, functioning correctly and are correctly calibrated.</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr><tr><td>2.6</td><td></td><td>Perform suitable diagnostic tests, based on engineering decision, to identify electrical faults</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr><tr><td>2.6R</td><td></td><td>Range – assess THREE from the following:</td><td></td><td></td><td></td><td></td></tr><tr><td></td><td class="letter">a</td><td class="sub">Loss of supply</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr><tr><td></td><td class="letter">b</td><td class="sub">Overload</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr><tr><td></td><td class="letter">c</td><td class="sub">Short circuit</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr><tr><td></td><td class="letter">d</td><td class="sub">Earth fault</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr><tr><td></td><td class="letter">e</td><td class="sub">Incorrect phase rotation</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr><tr><td></td><td class="letter">f</td><td class="sub">High resistance joints / loose terminals</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr><tr><td></td><td class="letter">g</td><td class="sub">Component, accessory or equipment faults</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr><tr><td></td><td class="letter">h</td><td class="sub">Open circuit</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr><tr><td></td><td class="letter">i</td><td class="sub">Signal faults</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr></table><table class="criteria-table"><tr><th colspan="7">2 Carry out fault diagnosis (cont.)</th></tr><tr><th>Criteria</th><th>Sub</th><th>Description</th><th>OTJ hrs</th><th>Obs</th><th>WT</th><th>PE</th></tr><tr><td>2.7</td><td></td><td>Use appropriate methods for locating faults including:</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr><tr><td></td><td class="letter">a</td><td class="sub">Using a logical approach</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr><tr><td></td><td class="letter">b</td><td class="sub">Using safe working practices</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr><tr><td></td><td class="letter">c</td><td class="sub">Interpretation of test readings</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr><tr><td>2.8</td><td></td><td>Use appropriate instruments correctly to carry out fault diagnosis</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr><tr><td>2.8R</td><td></td><td>Range – assess THREE from the following:</td><td></td><td></td><td></td><td></td></tr><tr><td></td><td class="letter">a</td><td class="sub">Voltage indicator</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr><tr><td></td><td class="letter">b</td><td class="sub">Low resistance ohm meter</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr><tr><td></td><td class="letter">c</td><td class="sub">Insulation resistance tester</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr><tr><td></td><td class="letter">d</td><td class="sub">EFLI and PFC tester</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr><tr><td></td><td class="letter">e</td><td class="sub">RCD tester</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr><tr><td></td><td class="letter">f</td><td class="sub">Ammeter</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr><tr><td></td><td class="letter">g</td><td class="sub">Phase rotation tester</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr><tr><td></td><td class="letter">h</td><td class="sub">Other appropriate instrument</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr></table><table class="criteria-table"><tr><th colspan="7">3 Carry out fault rectification</th></tr><tr><th>Criteria</th><th>Sub</th><th>Description</th><th>OTJ hrs</th><th>Obs</th><th>WT</th><th>PE</th></tr><tr><td>3.1</td><td></td><td>Assess the appropriate repairs, removals and replacements and their implications with relevant people, including:</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr><tr><td>3.1R</td><td></td><td>ONE of the following:</td><td></td><td></td><td></td><td></td></tr><tr><td></td><td class="letter">a</td><td class="sub">Other workers / colleagues</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr><tr><td></td><td class="letter">b</td><td class="sub">Customers / clients</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr><tr><td>3.2</td><td></td><td>Perform fault correction procedure correctly and safely using appropriate tools, equipment, and materials</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr><tr><td>3.3</td><td></td><td>Assess and verify that replacement components and associated equipment maintain:</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr><tr><td></td><td class="letter">a</td><td class="sub">Ease of access to enable future maintenance</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr><tr><td></td><td class="letter">b</td><td class="sub">Compliance with relevant regulations</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr><tr><td></td><td class="letter">c</td><td class="sub">Compliance with manufacturer’s instructions / organisational procedures</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr><tr><td>3.4</td><td></td><td>Apply appropriate procedures to ensure electrical equipment and components are left safe, in accordance with industry regulations, if the fault cannot be corrected immediately based on technical assessment</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr><tr><td>3.5</td><td></td><td>Establish and perform an appropriate inspection and testing procedure to confirm that circuits/equipment/components are functioning correctly after completion of fault correction work</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr><tr><td>3.6</td><td></td><td>Record test results and other appropriate information regarding the fault correction work clearly and accurately and report it to relevant people</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr><tr><td>3.6R</td><td></td><td>Range – assess ONE of the following:</td><td></td><td></td><td></td><td></td></tr><tr><td></td><td class="letter">a</td><td class="sub">Other workers/colleagues</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr><tr><td></td><td class="letter">b</td><td class="sub">Customers/clients</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr><tr><td></td><td class="letter">c</td><td class="sub">Representatives of other services</td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td><td><input type="checkbox"/></td></tr></table></div><div class="photo-section">
+<h2>Photo Evidence</h2>
+<input accept="image/*" id="photoInput" multiple="" type="file"/><br/>
+<div id="photoContainer"></div>
+</div>
+<div class="feedback-section">
+<h2>Assessor Feedback</h2>
+<textarea placeholder="Enter assessor feedback here..." rows="5"></textarea>
+</div>
+<div class="signature-section">
+<h2>Signatures</h2>
+<div class="sig-grid" style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+<div class="sig-card" style="border:1px solid #000; padding:10px;">
+<label for="assessorName"><strong>Assessor name</strong></label>
+<input id="assessorName" style="width:100%; box-sizing:border-box; margin:6px 0 8px 0;" type="text"/>
+<label><strong>Assessor signature</strong></label>
+<canvas class="sig-canvas" id="signatureAssessor" style="border:1px solid #000; width:100%; height:120px;"></canvas><br/>
+<button id="clearSigAssessor" type="button">Clear Assessor Signature</button>
+</div>
+<div class="sig-card" style="border:1px solid #000; padding:10px;">
+<label for="learnerName"><strong>Learner name</strong></label>
+<input id="learnerName" style="width:100%; box-sizing:border-box; margin:6px 0 8px 0;" type="text"/>
+<label><strong>Learner signature</strong></label>
+<canvas class="sig-canvas" id="signatureLearner" style="border:1px solid #000; width:100%; height:120px;"></canvas><br/>
+<button id="clearSigLearner" type="button">Clear Learner Signature</button>
+</div>
+</div>
+</div>
+<div class="controls">
+<button id="saveDraft">Save Draft</button>
+<button id="loadDraft">Load Draft</button>
+<button id="clearDraft">Clear Draft</button>
+<button id="exportPDF">Save / Export as PDF</button>
+</div>
+<script>
+const STORAGE_KEY = 'obs-report-unit102';
+const sigCanvas = document.getElementById('signature');
+const ctx = sigCanvas.getContext('2d');
+
+function collectData() {
+  return {
+    feedback: document.querySelector('textarea')?.value || '',
+    signature: sigCanvas.toDataURL(),
+    ticks: Array.from(document.querySelectorAll('input[type="checkbox"]')).map(cb => cb.checked),
+    photos: Array.from(document.querySelectorAll('.photo-card img')).map(img => img.src)
+  };
+}
+
+function applyData(data) {
+  if (!data) return;
+  document.querySelector('textarea').value = data.feedback || '';
+  document.querySelectorAll('input[type="checkbox"]').forEach((cb, i) => cb.checked = !!data.ticks[i]);
+  if (data.signature) {
+    const img = new Image();
+    img.onload = () => { ctx.clearRect(0, 0, sigCanvas.width, sigCanvas.height); ctx.drawImage(img, 0, 0); };
+    img.src = data.signature;
+  }
+  if (data.photos) {
+    const container = document.getElementById('photoContainer');
+    container.innerHTML = '';
+    data.photos.forEach(src => {
+      const div = document.createElement('div');
+      div.className = 'photo-card';
+      div.innerHTML = `<img src="${src}" alt="Photo"><input type='text' placeholder='Caption'><br>`;
+      container.appendChild(div);
+    });
+  }
+}
+
+document.getElementById('saveDraft').addEventListener('click', () => {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(collectData()));
+  alert('Draft saved');
+});
+
+document.getElementById('loadDraft').addEventListener('click', () => {
+  const data = localStorage.getItem(STORAGE_KEY);
+  if (data) applyData(JSON.parse(data));
+});
+
+document.getElementById('clearDraft').addEventListener('click', () => {
+  localStorage.removeItem(STORAGE_KEY);
+  alert('Draft cleared');
+});
+
+document.getElementById('exportPDF').addEventListener('click', () => window.print());
+</script>
+<script>
+(function(){
+  // --- Trim to three checkbox columns (Obs, WT, PE) ---
+  const tables = document.querySelectorAll('.criteria-table');
+  tables.forEach(tbl => {
+    // Remove any OTJ header
+    tbl.querySelectorAll('th').forEach(th => {
+      if ((th.textContent || '').toLowerCase().includes('otj')) th.remove();
+    });
+    // Remove extra checkbox cells in each row
+    tbl.querySelectorAll('tr').forEach(tr => {
+      const cells = Array.from(tr.children);
+      const cbCells = cells.map((td)=>td).filter(td => td.querySelector && td.querySelector('input[type="checkbox"]'));
+      if (cbCells.length > 3) {
+        const extras = cbCells.slice(0, cbCells.length - 3);
+        extras.forEach(td => td.remove());
+      }
+    });
+  });
+
+  // --- Photo delete buttons ---
+  const container = document.getElementById('photoContainer');
+  if (container) {
+    // Add delete button to existing cards
+    container.querySelectorAll('.photo-card').forEach(card => {
+      if (!card.querySelector('.delete-photo')) {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'delete-photo';
+        btn.textContent = 'Delete photo';
+        card.appendChild(btn);
+      }
+    });
+    // Delegate
+    container.addEventListener('click', (e) => {
+      if (e.target && e.target.classList.contains('delete-photo')) {
+        const card = e.target.closest('.photo-card');
+        if (card && confirm('Remove this photo?')) card.remove();
+      }
+    });
+    // Patch upload handler to add delete buttons to new cards
+    const input = document.getElementById('photoInput');
+    if (input) {
+      input.addEventListener('change', () => {
+        setTimeout(() => {
+          container.querySelectorAll('.photo-card').forEach(card => {
+            if (!card.querySelector('.delete-photo')) {
+              const btn = document.createElement('button');
+              btn.type = 'button';
+              btn.className = 'delete-photo';
+              btn.textContent = 'Delete photo';
+              card.appendChild(btn);
+            }
+          });
+        }, 60);
+      }, { capture: true });
+    }
+  }
+
+  // --- Signature touch support for iPad ---
+  const sigCanvas = document.getElementById('signature');
+  if (sigCanvas && sigCanvas.getContext) {
+    const ctx = sigCanvas.getContext('2d');
+    let drawing = false;
+
+    // if mouse listeners not already bound, bind them
+    if (!sigCanvas.__touchBound) {
+      function getTouchPos(canvasDom, touchEvent) {
+        const rect = canvasDom.getBoundingClientRect();
+        const t = touchEvent.touches[0] || touchEvent.changedTouches[0];
+        return { x: t.clientX - rect.left, y: t.clientY - rect.top };
+      }
+      sigCanvas.addEventListener('touchstart', function(e){
+        e.preventDefault();
+        const p = getTouchPos(sigCanvas, e);
+        drawing = true;
+        ctx.moveTo(p.x, p.y);
+      }, {passive:false});
+      sigCanvas.addEventListener('touchmove', function(e){
+        e.preventDefault();
+        if (!drawing) return;
+        const p = getTouchPos(sigCanvas, e);
+        ctx.lineTo(p.x, p.y);
+        ctx.stroke();
+      }, {passive:false});
+      sigCanvas.addEventListener('touchend', function(e){
+        e.preventDefault();
+        drawing = false;
+      }, {passive:false});
+      sigCanvas.__touchBound = true;
+    }
+  }
+
+  // --- Improve Save Draft alert & add fallback ---
+  const saveBtn = document.getElementById('saveDraft');
+  if (saveBtn) {
+    const STORAGE_KEY = 'obs-report-unit102';
+    function collectData() {
+      const feedbackEl = document.getElementById('feedback') || document.querySelector('textarea');
+      const container = document.getElementById('photoContainer');
+      const sigCanvas = document.getElementById('signature');
+      return {
+        feedback: feedbackEl ? feedbackEl.value : '',
+        signature: sigCanvas ? sigCanvas.toDataURL() : '',
+        ticks: Array.from(document.querySelectorAll('input[type="checkbox"]')).map(cb=>cb.checked),
+        photos: container ? Array.from(container.querySelectorAll('img')).map(img=>img.src) : []
+      };
+    }
+    saveBtn.addEventListener('click', () => {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(collectData()));
+        alert('Draft saved locally — reopen this page later to continue.');
+      } catch (err) {
+        window.tempDraft = collectData();
+        alert('Draft temporarily saved for this session — keep this tab open to retain changes.');
+      }
+    }, {capture:true});
+  }
+})();
+</script>
+<script>
+// === Signature: pointer events + high-DPI ===
+(function(){
+  const canvas = document.getElementById('signature');
+  if (!canvas || !canvas.getContext || canvas.__pointerEnhanced) return;
+  canvas.__pointerEnhanced = true;
+  const ctx = canvas.getContext('2d');
+
+  function resizeCanvasForDPR() {
+    const dpr = window.devicePixelRatio || 1;
+    const rect = canvas.getBoundingClientRect();
+    const w = Math.max(1, Math.round(rect.width * dpr));
+    const h = Math.max(1, Math.round(rect.height * dpr));
+    if (canvas.width !== w || canvas.height !== h) {
+      const prev = ctx.getImageData(0, 0, canvas.width || 1, canvas.height || 1);
+      canvas.width = w; canvas.height = h;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.lineWidth = 2; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+      try { ctx.putImageData(prev, 0, 0); } catch(_) {}
+    }
+  }
+  resizeCanvasForDPR();
+  window.addEventListener('resize', resizeCanvasForDPR);
+
+  let drawing = false;
+  function point(e){
+    const rect = canvas.getBoundingClientRect();
+    return { x: e.clientX - rect.left, y: e.clientY - rect.top };
+  }
+  canvas.addEventListener('pointerdown', (e)=>{
+    if (e.pointerType === 'touch') e.preventDefault();
+    canvas.setPointerCapture(e.pointerId);
+    drawing = true;
+    const p = point(e);
+    ctx.beginPath(); ctx.moveTo(p.x, p.y);
+  }, {passive:false});
+
+  canvas.addEventListener('pointermove', (e)=>{
+    if (!drawing) return;
+    if (e.pointerType === 'touch') e.preventDefault();
+    const p = point(e);
+    ctx.lineTo(p.x, p.y); ctx.stroke();
+  }, {passive:false});
+
+  function endStroke(e){
+    if (!drawing) return;
+    drawing = false;
+    try { canvas.releasePointerCapture(e.pointerId); } catch(_){}
+  }
+  canvas.addEventListener('pointerup', endStroke);
+  canvas.addEventListener('pointercancel', endStroke);
+
+  const clearBtn = document.getElementById('clearSig');
+  if (clearBtn && !clearBtn.__bound) {
+    clearBtn.__bound = true;
+    clearBtn.addEventListener('click', ()=>ctx.clearRect(0,0,canvas.width,canvas.height));
+  }
+})();
+
+// === Robust Save/Load V3 (captions + selected criteria + signature) ===
+(function(){
+  const STORAGE_KEY = 'obs-report-unit102-v3';
+  const saveBtn  = document.getElementById('saveDraft');
+  const loadBtn  = document.getElementById('loadDraft');
+  const clearBtn = document.getElementById('clearDraft');
+
+  function collectDataV3() {
+    const feedbackEl = document.getElementById('feedback') || document.querySelector('textarea');
+    const sigCanvas  = document.getElementById('signature');
+    const photos = Array.from(document.querySelectorAll('#photoContainer .photo-card')).map(card => {
+      const img = card.querySelector('img');
+      const captionEl = card.querySelector('.caption') || card.querySelector('input[type="text"]');
+      const caption = captionEl ? captionEl.value : '';
+      const selected = Array.from(card.querySelectorAll('.criteria-panel input[type="checkbox"]:checked')).map(i => i.value);
+      return { src: img ? img.src : '', caption, criteria: selected };
+    });
+    return {
+      feedback: feedbackEl ? feedbackEl.value : '',
+      signature: sigCanvas ? sigCanvas.toDataURL() : '',
+      ticks: Array.from(document.querySelectorAll('input[type="checkbox"]')).map(cb => cb.checked),
+      photos
+    };
+  }
+
+  function applyDataV3(data) {
+    if (!data) return;
+    const feedbackEl = document.getElementById('feedback') || document.querySelector('textarea');
+    if (feedbackEl) feedbackEl.value = data.feedback || '';
+
+    document.querySelectorAll('input[type="checkbox"]').forEach((cb,i)=>cb.checked = !!(data.ticks && data.ticks[i]));
+
+    const sigCanvas = document.getElementById('signature');
+    if (sigCanvas && data.signature) {
+      const ctx = sigCanvas.getContext('2d');
+      const img = new Image();
+      img.onload = () => { ctx.clearRect(0,0,sigCanvas.width,sigCanvas.height); ctx.drawImage(img,0,0); };
+      img.src = data.signature;
+    }
+
+    const container = document.getElementById('photoContainer');
+    if (container) {
+      container.innerHTML = '';
+      (data.photos || []).forEach(ph => {
+        const div = document.createElement('div');
+        div.className = 'photo-card';
+        div.innerHTML = `
+          <img src="${ph.src}" alt="Photo">
+          <input type="text" class="caption" placeholder="Caption" value="${ph.caption || ''}">
+          <div class="criteria-picker"></div>
+          <div class="controls-row"><button type="button" class="delete-photo">Delete photo</button></div>
+        `;
+        container.appendChild(div);
+      });
+      document.dispatchEvent(new Event('obs-photos-restored'));
+    }
+  }
+
+  function bind() {
+    if (saveBtn && !saveBtn.__bound) {
+      saveBtn.__bound = true;
+      saveBtn.addEventListener('click', () => {
+        try {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(collectDataV3()));
+          alert('Draft saved locally — reopen this page later to continue.');
+        } catch (err) {
+          window.tempDraftV3 = collectDataV3();
+          alert('Draft temporarily saved for this session — keep this tab open to retain changes.');
+        }
+      });
+    }
+    if (loadBtn && !loadBtn.__bound) {
+      loadBtn.__bound = true;
+      loadBtn.addEventListener('click', () => {
+        try {
+          const d = localStorage.getItem(STORAGE_KEY);
+          if (d) { applyDataV3(JSON.parse(d)); return; }
+        } catch (_){}
+        try {
+          const old = localStorage.getItem('obs-report-unit102');
+          if (old) {
+            const data = JSON.parse(old);
+            data.photos = (data.photos || []).map(src => ({src, caption:'', criteria:[]}));
+            applyDataV3(data);
+            return;
+          }
+        } catch(_){}
+        if (window.tempDraftV3) applyDataV3(window.tempDraftV3);
+      });
+    }
+    if (clearBtn && !clearBtn.__bound) {
+      clearBtn.__bound = true;
+      clearBtn.addEventListener('click', () => {
+        try { localStorage.removeItem(STORAGE_KEY); } catch(_){}
+        alert('Draft cleared');
+      });
+    }
+  }
+  bind();
+})();
+</script>
+<div id="exportPDFHelper" style="margin-top:10px;"></div><script>
+(async function(){
+  // --- Try to enable persistent storage for reliable Save Draft ---
+  const statusEl = document.createElement('span');
+  statusEl.id = 'storageStatus';
+  const ctrl = document.querySelector('.controls');
+  if (ctrl) ctrl.appendChild(statusEl);
+  async function updatePersistStatus() {
+    try {
+      if (!('storage' in navigator) || !navigator.storage.persisted) return;
+      const persisted = await navigator.storage.persisted();
+      if (persisted) { statusEl.textContent = 'Saving: persistent'; return; }
+      if (navigator.storage.persist) {
+        const ok = await navigator.storage.persist();
+        statusEl.textContent = ok ? 'Saving: persistent' : 'Saving: session-only';
+      } else {
+        statusEl.textContent = 'Saving: session-only';
+      }
+    } catch(e){ statusEl.textContent = 'Saving: session-only'; }
+  }
+  updatePersistStatus();
+
+  // --- Export to PDF helper: open a print-friendly window and trigger print ---
+  function exportToPDFViaPrint() {
+    try {
+      const html = document.documentElement.cloneNode(true);
+      // Hide buttons in the clone
+      html.querySelectorAll('.controls, .toggle-criteria, .criteria-panel, .delete-photo, #exportPDFHelper, #openInSafariBtn').forEach(el=>el && el.remove());
+      const w = window.open('', '_blank');
+      if (!w) { alert('Popup blocked. Allow popups for this site to export.'); return; }
+      w.document.open();
+      w.document.write('<!DOCTYPE html><html>' + html.innerHTML + '</html>');
+      w.document.close();
+      // Ensure print after load
+      w.onload = function(){ try { w.focus(); w.print(); } catch(e) {} };
+    } catch (e) {
+      alert('Could not open print window. You can also use Share → Print in Safari.');
+    }
+  }
+
+  // Add helper buttons if we can find the controls
+  const helper = document.getElementById('exportPDFHelper');
+  if (helper) {
+    helper.innerHTML = ''
+      + '<button id="exportPDF_Fallback" type="button">Export as PDF (compatibility)</button> '
+      + '<button id="openInSafariBtn" type="button">Open in Safari to Print</button>';
+    const btn = document.getElementById('exportPDF_Fallback');
+    if (btn) btn.addEventListener('click', exportToPDFViaPrint);
+    const openSafari = document.getElementById('openInSafariBtn');
+    if (openSafari) {
+      openSafari.addEventListener('click', () => {
+        try {
+          // Open a new tab with current page URL; on iOS this opens in browser chrome
+          window.open(window.location.href, '_blank');
+        } catch(e) {
+          alert('Could not open Safari automatically. Copy the URL and open it in Safari to use Share → Print.');
+        }
+      });
+    }
+  }
+
+  // Also patch existing Export button if present
+  const nativeExportBtn = document.getElementById('exportPDF');
+  if (nativeExportBtn && !nativeExportBtn.__patched) {
+    nativeExportBtn.__patched = true;
+    nativeExportBtn.addEventListener('click', function(e){
+      e.preventDefault();
+      exportToPDFViaPrint();
+    }, {capture: true});
+  }
+})();
+</script><script>
+(function(){
+  // Pointer-enhanced signature handling for multiple canvases
+  function enhanceSignatureCanvas(canvasId, clearBtnId){
+    const canvas = document.getElementById(canvasId);
+    if (!canvas || canvas.__pointerEnhanced) return;
+    canvas.__pointerEnhanced = true;
+    const ctx = canvas.getContext('2d');
+
+    function resizeCanvasForDPR() {
+      const dpr = window.devicePixelRatio || 1;
+      const rect = canvas.getBoundingClientRect();
+      const w = Math.max(1, Math.round(rect.width * dpr));
+      const h = Math.max(1, Math.round(rect.height * dpr));
+      if (canvas.width !== w || canvas.height !== h) {
+        const prev = ctx.getImageData(0, 0, canvas.width || 1, canvas.height || 1);
+        canvas.width = w; canvas.height = h;
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        ctx.lineWidth = 2; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+        try { ctx.putImageData(prev, 0, 0); } catch(_) {}
+      }
+    }
+    resizeCanvasForDPR();
+    window.addEventListener('resize', resizeCanvasForDPR);
+
+    let drawing = false;
+    function point(e){
+      const rect = canvas.getBoundingClientRect();
+      return { x: e.clientX - rect.left, y: e.clientY - rect.top };
+    }
+    canvas.addEventListener('pointerdown', (e)=>{
+      if (e.pointerType === 'touch') e.preventDefault();
+      canvas.setPointerCapture(e.pointerId);
+      drawing = true;
+      const p = point(e);
+      ctx.beginPath(); ctx.moveTo(p.x, p.y);
+    }, {passive:false});
+    canvas.addEventListener('pointermove', (e)=>{
+      if (!drawing) return;
+      if (e.pointerType === 'touch') e.preventDefault();
+      const p = point(e);
+      ctx.lineTo(p.x, p.y); ctx.stroke();
+    }, {passive:false});
+    function endStroke(e){
+      if (!drawing) return;
+      drawing = false;
+      try { canvas.releasePointerCapture(e.pointerId); } catch(_){}
+    }
+    canvas.addEventListener('pointerup', endStroke);
+    canvas.addEventListener('pointercancel', endStroke);
+
+    const clearBtn = document.getElementById(clearBtnId);
+    if (clearBtn && !clearBtn.__bound) {
+      clearBtn.__bound = true;
+      clearBtn.addEventListener('click', ()=>ctx.clearRect(0,0,canvas.width,canvas.height));
+    }
+  }
+
+  enhanceSignatureCanvas('signatureAssessor', 'clearSigAssessor');
+  enhanceSignatureCanvas('signatureLearner', 'clearSigLearner');
+
+  // Upgrade Save/Load to include the new fields + both signatures
+  const STORAGE_KEY = 'obs-report-unit102-v4'; // bump key
+  const saveBtn  = document.getElementById('saveDraft');
+  const loadBtn  = document.getElementById('loadDraft');
+  const clearBtn = document.getElementById('clearDraft');
+
+  function collectDataV4() {
+    const feedbackEl = document.getElementById('feedback') || document.querySelector('textarea');
+    const sigA = document.getElementById('signatureAssessor');
+    const sigL = document.getElementById('signatureLearner');
+    const photos = Array.from(document.querySelectorAll('#photoContainer .photo-card')).map(card => {
+      const img = card.querySelector('img');
+      const captionEl = card.querySelector('.caption') || card.querySelector('input[type="text"]');
+      const caption = captionEl ? captionEl.value : '';
+      const selected = Array.from(card.querySelectorAll('.criteria-panel input[type="checkbox"]:checked')).map(i => i.value);
+      return { src: img ? img.src : '', caption, criteria: selected };
+    });
+    return {
+      // New header fields
+      candidateName: document.getElementById('candidateName')?.value || '',
+      assessmentDate: document.getElementById('assessmentDate')?.value || '',
+      jobDescription: document.getElementById('jobDescription')?.value || '',
+      siteAddress: document.getElementById('siteAddress')?.value || '',
+      assessorName: document.getElementById('assessorName')?.value || '',
+      learnerName: document.getElementById('learnerName')?.value || '',
+      // Existing fields
+      feedback: feedbackEl ? feedbackEl.value : '',
+      signatureAssessor: sigA ? sigA.toDataURL() : '',
+      signatureLearner: sigL ? sigL.toDataURL() : '',
+      ticks: Array.from(document.querySelectorAll('input[type="checkbox"]')).map(cb => cb.checked),
+      photos
+    };
+  }
+
+  function applyDataV4(data) {
+    if (!data) return;
+    // Header fields
+    const map = {
+      candidateName: 'candidateName',
+      assessmentDate: 'assessmentDate',
+      jobDescription: 'jobDescription',
+      siteAddress: 'siteAddress',
+      assessorName: 'assessorName',
+      learnerName: 'learnerName'
+    };
+    Object.keys(map).forEach(k => {
+      const el = document.getElementById(map[k]);
+      if (el) el.value = data[k] || '';
+    });
+
+    // Existing
+    const feedbackEl = document.getElementById('feedback') || document.querySelector('textarea');
+    if (feedbackEl) feedbackEl.value = data.feedback || '';
+
+    document.querySelectorAll('input[type="checkbox"]').forEach((cb,i)=>cb.checked = !!(data.ticks && data.ticks[i]));
+
+    function restoreSig(canvasId, img64){
+      const c = document.getElementById(canvasId);
+      if (c && img64) {
+        const ctx = c.getContext('2d');
+        const img = new Image();
+        img.onload = () => { ctx.clearRect(0,0,c.width,c.height); ctx.drawImage(img,0,0); };
+        img.src = img64;
+      }
+    }
+    restoreSig('signatureAssessor', data.signatureAssessor);
+    restoreSig('signatureLearner', data.signatureLearner);
+
+    // photos
+    const container = document.getElementById('photoContainer');
+    if (container) {
+      container.innerHTML = '';
+      (data.photos || []).forEach(ph => {
+        const div = document.createElement('div');
+        div.className = 'photo-card';
+        div.innerHTML = `
+          <img src="${ph.src}" alt="Photo">
+          <input type="text" class="caption" placeholder="Caption" value="${ph.caption || ''}">
+          <div class="criteria-picker"></div>
+          <div class="controls-row"><button type="button" class="delete-photo">Delete photo</button></div>
+        `;
+        container.appendChild(div);
+      });
+      document.dispatchEvent(new Event('obs-photos-restored'));
+    }
+  }
+
+  function bindV4() {
+    if (saveBtn && !saveBtn.__boundV4) {
+      saveBtn.__boundV4 = true;
+      saveBtn.addEventListener('click', () => {
+        try {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(collectDataV4()));
+          alert('Draft saved locally — reopen this page later to continue.');
+        } catch (err) {
+          window.tempDraftV4 = collectDataV4();
+          alert('Draft temporarily saved for this session — keep this tab open to retain changes.');
+        }
+      }, {capture:true});
+    }
+    if (loadBtn && !loadBtn.__boundV4) {
+      loadBtn.__boundV4 = true;
+      loadBtn.addEventListener('click', () => {
+        try {
+          const d = localStorage.getItem(STORAGE_KEY);
+          if (d) { applyDataV4(JSON.parse(d)); return; }
+        } catch (_){}
+        if (window.tempDraftV4) applyDataV4(window.tempDraftV4);
+      }, {capture:true});
+    }
+    if (clearBtn && !clearBtn.__boundV4) {
+      clearBtn.__boundV4 = true;
+      clearBtn.addEventListener('click', () => {
+        try { localStorage.removeItem(STORAGE_KEY); } catch(_){}
+        alert('Draft cleared');
+      }, {capture:true});
+    }
+  }
+  bindV4();
+})();
+</script>
+<script>
+(function(){
+  // Replace inputs/checkboxes with static text for printing
+  function prepareForPrintClone(cloneDoc, liveDoc){
+    const mapById = {};
+    // map live signature canvases by id -> dataURL
+    liveDoc.querySelectorAll('canvas.sig-canvas, #signature, #signatureAssessor, #signatureLearner').forEach(cv => {
+      if (cv.id) {
+        try { mapById[cv.id] = cv.toDataURL(); } catch(e){}
+      }
+    });
+
+    // Replace inputs and textareas
+    cloneDoc.querySelectorAll('input, textarea, select').forEach(el => {
+      const span = cloneDoc.createElement('span');
+      const type = (el.getAttribute('type')||'').toLowerCase();
+      if (type === 'checkbox') {
+        span.textContent = el.checked ? '☑︎' : '☐';
+      } else {
+        span.textContent = el.value || '';
+      }
+      span.style.whiteSpace = 'pre-wrap';
+      el.replaceWith(span);
+    });
+
+    // Replace signature canvases with images from live data
+    cloneDoc.querySelectorAll('canvas.sig-canvas, #signature, #signatureAssessor, #signatureLearner').forEach(cv => {
+      const id = cv.id;
+      const img = cloneDoc.createElement('img');
+      img.style.maxWidth = '100%';
+      img.style.border = '1px solid #000';
+      if (id && mapById[id]) img.src = mapById[id];
+      cv.replaceWith(img);
+    });
+  }
+
+  // Patch export button and provide a fallback button if needed
+  function exportToPDFCompat(){
+    try {
+      const clone = document.documentElement.cloneNode(true);
+      prepareForPrintClone(clone, document);
+      // remove non-print controls
+      clone.querySelectorAll('.controls, .toggle-criteria, .criteria-panel, .delete-photo, #exportPDFHelper, #openInSafariBtn').forEach(el=>el && el.remove());
+      const w = window.open('', '_blank');
+      if (!w) { alert('Popup blocked. Allow popups for this site to export.'); return; }
+      w.document.open();
+      w.document.write('<!DOCTYPE html><html>' + clone.innerHTML + '</html>');
+      w.document.close();
+      w.onload = function(){ try { w.focus(); w.print(); } catch(e) {} };
+    } catch(e) {
+      alert('Export failed. On iPad Safari you can use Share → Print as a backup.');
+    }
+  }
+
+  // Hook up our export function
+  const nativeExportBtn = document.getElementById('exportPDF');
+  if (nativeExportBtn && !nativeExportBtn.__printCompat) {
+    nativeExportBtn.__printCompat = true;
+    nativeExportBtn.addEventListener('click', function(e){
+      e.preventDefault();
+      exportToPDFCompat();
+    }, {capture:true});
+  }
+  // Provide helper buttons if container exists
+  const helper = document.getElementById('exportPDFHelper');
+  if (helper && !helper.__inited) {
+    helper.__inited = true;
+    helper.innerHTML = ''
+      + '<button id="exportPDF_Fallback2" type="button">Export as PDF (fix)</button> '
+      + '<button id="openInSafariBtn2" type="button">Open in Safari to Print</button>';
+    const btn2 = document.getElementById('exportPDF_Fallback2');
+    if (btn2) btn2.addEventListener('click', exportToPDFCompat);
+    const open2 = document.getElementById('openInSafariBtn2');
+    if (open2) open2.addEventListener('click', ()=>window.open(window.location.href, '_blank'));
+  }
+
+  // Prevent page from moving while signing
+  (function(){
+    let signing = false;
+    function start(){ signing = true; document.documentElement.classList.add('signing'); document.body.classList.add('signing'); }
+    function end(){ signing = false; document.documentElement.classList.remove('signing'); document.body.classList.remove('signing'); }
+    document.querySelectorAll('canvas.sig-canvas, #signature, #signatureAssessor, #signatureLearner').forEach(cv => {
+      cv.addEventListener('pointerdown', (e)=>{ start(); }, {passive:false});
+      cv.addEventListener('pointerup', (e)=>{ end(); }, {passive:false});
+      cv.addEventListener('pointercancel', (e)=>{ end(); }, {passive:false});
+    });
+    // extra safety: while signing, prevent touchmove scrolling
+    window.addEventListener('touchmove', (e)=>{ if (signing) e.preventDefault(); }, {passive:false});
+  })();
+})();
+</script>
+<script>
+(function(){
+  // Build a map from criteria code -> Obs checkbox input
+  function buildCriteriaObsMap(){
+    const map = {};
+    document.querySelectorAll('.criteria-table').forEach(table => {
+      // Find the header row that contains 'Obs'
+      const headerRow = Array.from(table.querySelectorAll('tr')).find(tr => {
+        return Array.from(tr.children).some(th => th.tagName === 'TH' && /obs/i.test(th.textContent));
+      });
+      if (!headerRow) return;
+      const headers = Array.from(headerRow.children);
+      const obsIndex = headers.findIndex(h => /obs/i.test(h.textContent));
+      if (obsIndex === -1) return;
+
+      let currentMain = null; // e.g., "1.3"
+      Array.from(table.querySelectorAll('tr')).forEach(tr => {
+        // Skip header rows
+        if (tr.querySelector('th')) return;
+
+        const cells = Array.from(tr.children);
+        if (cells.length === 0) return;
+
+        // Detect if first cell holds a main criterion like "1.1", "2.5", "3.2"
+        const firstCellText = (cells[0].textContent || '').trim();
+        const isMain = /^\d+(\.\d+)?$/.test(firstCellText);
+
+        if (isMain) {
+          currentMain = firstCellText; // update current main id
+        }
+
+        // Determine the code for this row
+        let code = null;
+        const letterCell = tr.querySelector('td.letter');
+        if (letterCell && currentMain) {
+          const letter = (letterCell.textContent || '').trim().toLowerCase();
+          if (letter) code = `${currentMain}${letter}`; // e.g., "1.3a"
+        } else if (isMain) {
+          code = firstCellText; // e.g., "2.1"
+        }
+
+        if (!code) return;
+
+        // Find Obs checkbox cell
+        const obsCell = cells[obsIndex];
+        if (!obsCell) return;
+        const obsCb = obsCell.querySelector('input[type="checkbox"]');
+        if (!obsCb) return;
+
+        map[code] = obsCb;
+      });
+    });
+    window.CRITERIA_OBS_MAP = map;
+  }
+
+  function tickObsFor(code){
+    if (!window.CRITERIA_OBS_MAP) buildCriteriaObsMap();
+    const cb = window.CRITERIA_OBS_MAP && window.CRITERIA_OBS_MAP[code];
+    if (cb) cb.checked = true;
+  }
+
+  // Build the map on load
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', buildCriteriaObsMap);
+  } else {
+    buildCriteriaObsMap();
+  }
+
+  // Listen for ticks inside any photo criteria panel
+  document.addEventListener('change', (e) => {
+    if (e.target && e.target.matches('.criteria-panel input[type="checkbox"]')) {
+      if (e.target.checked) {
+        tickObsFor(e.target.value);
+      }
+    }
+  }, true);
+})();
+</script><script>
+/* Auto-Obs v14: Only tick the Obs checkbox on the specific row for that criterion (closest to the question). */
+(function(){
+  function norm(code){ return String(code||'').replace(/\s+/g,'').toLowerCase(); }
+
+  function getColumnIndexByHeaderRow(headerRow, label){
+    const headers = Array.from(headerRow.children);
+    return headers.findIndex(h => (h.textContent||'').trim().toLowerCase() === label);
+  }
+
+  function buildCriteriaRowMap(){
+    // Map: code -> array of {obsCb, rowIndex}
+    const map = {};
+    let globalRowCounter = 0;
+    document.querySelectorAll('.criteria-table').forEach(table => {
+      const rows = Array.from(table.querySelectorAll('tr'));
+      const headerRow = rows.find(tr => Array.from(tr.children).some(th => th.tagName === 'TH' && /obs/i.test(th.textContent)));
+      if (!headerRow) return;
+
+      const obsIndex = getColumnIndexByHeaderRow(headerRow, 'obs');
+      if (obsIndex === -1) return; // don't guess other columns
+
+      let currentMain = null;
+      rows.forEach(tr => {
+        if (tr.querySelector('th')) return; // skip header row(s)
+        const cells = Array.from(tr.children);
+        if (!cells.length) return;
+
+        const firstCellText = (cells[0].textContent || '').trim();
+        const isMain = /^\d+(\.\d+)?$/.test(firstCellText);
+
+        if (isMain) currentMain = firstCellText;
+
+        // Determine code for this row
+        let code = null;
+        const letterCell = tr.querySelector('td.letter');
+        if (letterCell && currentMain) {
+          const letter = (letterCell.textContent || '').trim().toLowerCase();
+          if (letter) code = `${currentMain}${letter}`;
+        } else if (isMain) {
+          code = firstCellText;
+        }
+
+        if (!code) { globalRowCounter++; return; }
+
+        const obsCell = cells[obsIndex];
+        const obsCb = obsCell ? obsCell.querySelector('input[type="checkbox"]') : null;
+        if (!obsCb) { globalRowCounter++; return; }
+
+        const key = norm(code);
+        if (!map[key]) map[key] = [];
+        map[key].push({ obsCb, rowIndex: globalRowCounter });
+
+        globalRowCounter++;
+      });
+    });
+    window.CRITERIA_ROW_MAP = map;
+  }
+
+  function tickClosestObsFor(code){
+    if (!window.CRITERIA_ROW_MAP) buildCriteriaRowMap();
+    const list = window.CRITERIA_ROW_MAP[norm(code)] || [];
+    if (!list.length) return;
+    // Choose the *closest* in reading order: the first occurrence
+    const { obsCb } = list[0];
+    obsCb.checked = true;
+    try {
+      // Trigger change so existing row-highlighting logic runs
+      obsCb.dispatchEvent(new Event('change', {bubbles:true}));
+    } catch(_) {}
+    // Fallback green highlight
+    const row = obsCb.closest('tr');
+    if (row && !row.classList.contains('checked')) row.classList.add('checked');
+  }
+
+  // Init map
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', buildCriteriaRowMap);
+  } else {
+    buildCriteriaRowMap();
+  }
+
+  // Rebuild if tables mutate
+  if (window.MutationObserver) {
+    const mo = new MutationObserver(() => buildCriteriaRowMap());
+    mo.observe(document.body, {childList:true, subtree:true});
+  }
+
+  // Listen to photo criteria selection
+  document.addEventListener('change', (e) => {
+    const t = e.target;
+    if (t && t.matches('.criteria-panel input[type="checkbox"]')) {
+      if (t.checked) tickClosestObsFor(t.value);
+    }
+  }, true);
+})();
+</script><div id="actionToolbar" style="position:fixed; left:0; right:0; bottom:0; background:#f7f7f7; border-top:1px solid #ccc; padding:8px; display:flex; gap:8px; justify-content:center; z-index:9999;"><button id="btnPrint" style="padding:8px 12px;" type="button">Print / Export PDF</button><button id="btnSave" style="padding:8px 12px;" type="button">Save Form</button><a download="AOR_save.json" href="#" id="downloadLink" style="display:none;"></a><button id="btnLoad" style="padding:8px 12px;" type="button">Load Form</button><input accept="application/json" id="fileLoad" style="display:none;" type="file"/><button id="btnClear" style="padding:8px 12px;" type="button">Clear Form</button></div><script>
+// Dynamic title & unit switcher (authoritative)
+(function(){
+  function applyTitles(u){
+    var h1 = document.querySelector('h1');
+    var h2 = document.querySelector('h2');
+    if (!h1) return;
+    switch(String(u)){
+      case '102':
+        h1.textContent = 'Assessor Observation Report – City & Guilds 5357-102';
+        if (h2) h2.textContent = 'Apply relevant health & safety legislation in the workplace.';
+        break;
+      case '106':
+        h1.textContent = 'Assessor Observation Report – City & Guilds 5357-106';
+        if (h2) h2.textContent = 'Organise and Oversee the Electrical Work Environment';
+        break;
+      case '109':
+        h1.textContent = 'Assessor Observation Report – City & Guilds 5357-109';
+        if (h2) h2.textContent = 'Prepare to install wiring systems, enclosures and associated equipment';
+        break;
+      case '113':
+        h1.textContent = 'Assessor Observation Report – City & Guilds 5357-113';
+        if (h2) h2.textContent = 'Inspect, Test and Commission Electrical Systems';
+        break;
+      case '115':
+        h1.textContent = 'Assessor Observation Report – City & Guilds 5357-115';
+        if (h2) h2.textContent = 'Apply Fault Diagnosis and Rectification';
+        break;
+      case '118':
+        h1.textContent = 'Assessor Observation Report – City & Guilds 5357-118';
+        if (h2) h2.textContent = 'Prepare to terminate and connect cables and conductors';
+        break;
+      default:
+        if (h2) h2.textContent = '';
+    }
+  }
+  function showUnit(u){
+    ['102','106','109','113','115','118'].forEach(function(x){
+      var el = document.getElementById('unit-'+x);
+      if (el) el.style.display = (String(u)===x)?'':'none';
+    });
+  }
+  window.applyTitles = applyTitles;
+  window.showUnit = showUnit;
+  document.addEventListener('DOMContentLoaded', function(){
+    var sel = document.getElementById('unitSelect');
+    if (sel){
+      sel.addEventListener('change', function(){
+        applyTitles(sel.value);
+        showUnit(sel.value);
+      });
+      // initial
+      applyTitles(sel.value);
+      showUnit(sel.value);
+    }
+  });
+})();
+</script><script>
+// ===== Unified criteria catalogue for all units =====
+(function(){
+  window.CRITERIA_102 = [
+    {id:'1.1', text:'Identify relevant H&S procedures and comply with duties and obligations'},
+    {id:'1.2', text:'Produce a risk assessment and method statement'},
+    {id:'1.3a', text:'Work within requirements: risk assessments'},
+    {id:'1.3b', text:'Work within requirements: method statements'},
+    {id:'1.3c', text:'Work within requirements: safe systems of work'},
+    {id:'2.1', text:'Identify unsafe situations/conditions and take remedial actions'},
+    {id:'2.2a', text:'Assess hazards: materials'},
+    {id:'2.2b', text:'Assess hazards: tools'},
+    {id:'2.2c', text:'Assess hazards: equipment'},
+    {id:'2.3', text:'Identify high risk hazards and report to relevant persons'},
+    {id:'2.4', text:'Apply measures to control health and safety hazards'},
+    {id:'2.5', text:'Select and use correct PPE'},
+    {id:'3.1', text:'Personal conduct to ensure H&S of self and others'},
+    {id:'3.2a', text:'Safe use, maintenance, storage: workplace policies'},
+    {id:'3.2b', text:'Safe use, maintenance, storage: supplier information'},
+    {id:'3.2c', text:'Safe use, maintenance, storage: manufacturer’s instructions'},
+    {id:'3.3', text:'Comply with warning/mandatory/prohibition notices'},
+    {id:'3.4', text:'Ensure safety using guards, barriers, notices'},
+    {id:'3.5a', text:'Use access equipment correctly: Ladder'},
+    {id:'3.5b', text:'Use access equipment correctly: Tower scaffold or MEWP'},
+    {id:'3.5c', text:'Use access equipment correctly: Stepladder'},
+    {id:'3.5d', text:'Use access equipment correctly: Platform'},
+    {id:'4.1a', text:'Environmental: Environmental Protection Act'},
+    {id:'4.1b', text:'Environmental: Hazardous Waste Regulations'},
+    {id:'4.1c', text:'Environmental: Pollution Prevention & Control Act'},
+    {id:'4.1d', text:'Environmental: Control of Pollution Act'},
+    {id:'4.1e', text:'Environmental: Control of Noise at Work Regulations'},
+    {id:'4.1f', text:'Environmental: Environmental Act'}
+  ];
+
+  window.CRITERIA_106 = [
+    {id:'1.1', text:'Liaise to evaluate required info for safe/effective operation'},
+    {id:'1.2', text:'Identify appropriate technical/functional information required'},
+    {id:'1.3', text:'Provide info timely, courteous, suitable, professional'},
+    {id:'2.1', text:'Produce/revise RA & MS for own/others within responsibility'},
+    {id:'2.2', text:'Confirm work meets H&S legislation and industry standards'},
+    {id:'3.1', text:'Procedures to coordinate with others; resolve out-of-scope issues'},
+    {id:'3.2', text:'Apply clear, accurate, appropriate communication techniques'},
+    {id:'3.3', text:'Work effectively with colleagues to enhance performance'},
+    {id:'4.1', text:'Organise operatives by duties/responsibilities'},
+    {id:'4.2a', text:'Monitor: Industry working practices'},
+    {id:'4.2b', text:'Monitor: Programme of work'},
+    {id:'4.2c', text:'Monitor: Health & Safety requirements'},
+    {id:'4.2d', text:'Monitor: Cost effectiveness'},
+    {id:'4.2e', text:'Monitor: Environmental considerations'},
+    {id:'4.3', text:'Procedures to correct issues during work activities'},
+    {id:'5.1a', text:'Programme: time estimation'},
+    {id:'5.1b', text:'Programme: liaison with other trades'},
+    {id:'5.2', text:'Communicate clearly and concisely'},
+    {id:'5.3', text:'Assess when to liaise with other parties'},
+    {id:'6.1', text:'Organise provision of resources'},
+    {id:'6.1a', text:'Range: materials'},
+    {id:'6.1b', text:'Range: fixings'},
+    {id:'6.1c', text:'Range: plant'},
+    {id:'6.1d', text:'Range: labour'},
+    {id:'6.1e', text:'Range: tools'},
+    {id:'6.2a', text:'Materials: right type'},
+    {id:'6.2b', text:'Materials: fit for purpose'},
+    {id:'6.2c', text:'Materials: correct quantity'},
+    {id:'6.2d', text:'Materials: cost efficient'},
+    {id:'6.3', text:'Resources undamaged at delivery'},
+    {id:'6.4', text:'Safe/effective storage of materials/tools/equipment'}
+  ];
+
+  window.CRITERIA_109 = [
+    {id:'1.1a', text:'Adopting appropriate PPE'},
+    {id:'1.1b', text:'Following a safe system of work (RA/MS)'},
+    {id:'1.1c', text:'Selecting appropriate tools/equipment for installation'},
+    {id:'1.2a', text:'Secure site storage confirmed'},
+    {id:'1.2b', text:'Materials/components to spec'},
+    {id:'1.2c', text:'Report pre-work damage/defects to relevant person'},
+    {id:'1.2d', text:'Site readiness confirmed'},
+    {id:'1.2e', text:'Authorisation to start confirmed'},
+    {id:'1.3',  text:'Docs confirm correct quantity and no damage'},
+    {id:'1.4',  text:'Locations compatible with other services'},
+    {id:'1.5a', text:'Locations: cosmetic appearance'},
+    {id:'1.5b', text:'Locations: external influences'},
+    {id:'2.1a', text:'Use: specifications'},
+    {id:'2.1b', text:'Use: programmes'},
+    {id:'2.1c', text:'Use: manufacturer’s instructions'},
+    {id:'2.1d', text:'Use: layout drawings'},
+    {id:'2.1e', text:'Use: BS7671 / other sources'},
+    {id:'3.1', text:'Measure and mark out appropriately'},
+    {id:'3.2', text:'Install cables per regs/spec/programme'},
+    {id:'3.2a', text:'Range: Singles'},
+    {id:'3.2b', text:'Range: Multi-core insulated'},
+    {id:'3.2c', text:'Range: PVC/PVC flat profile'},
+    {id:'3.2d', text:'Range: MICC'},
+    {id:'3.2e', text:'Range: Fire performance'},
+    {id:'3.2f', text:'Range: SWA'},
+    {id:'3.2g', text:'Range: GSWB'},
+    {id:'3.2h', text:'Range: Data/PoE'},
+    {id:'3.2i', text:'Range: DC Cabling'},
+    {id:'3.3PVC', text:'PVC containment: trunking or conduit (one)'},
+    {id:'3.3MET', text:'Metallic containment: conduit or trunking (one)'},
+    {id:'3.3X', text:'Plus one: tray/basket/ladder/ducting/modular/busbar/power track'},
+    {id:'3.4', text:'Install equipment per regs/spec/manufacturer/programme'},
+    {id:'3.4a', text:'Isolators/switches'},
+    {id:'3.4b', text:'Socket outlets'},
+    {id:'3.4c', text:'DB/CCU'},
+    {id:'3.4d', text:'OCPD'},
+    {id:'3.4e', text:'Luminaires'},
+    {id:'3.4f', text:'Data/WiFi Router'},
+    {id:'3.4g', text:'EV charging point'},
+    {id:'3.4h', text:'Other appropriate equipment'},
+    {id:'3.5', text:'Communicate professionally to aid installation'},
+    {id:'3.6', text:'Dispose of waste per site/statutory'},
+    {id:'4.1a', text:'Quality: correct type and fit for purpose'},
+    {id:'4.1b', text:'Quality: installed per BS7671'},
+    {id:'4.1c', text:'Quality: meets spec/plans/instructions'},
+    {id:'4.1d', text:'Quality: installed per manufacturer’s instructions'}
+  ];
+
+  window.CRITERIA_113 = [
+    {id:'1.1', text:'Safe isolation per regs'},
+    {id:'1.2', text:'Ensure H&S of self and others during I/T/C'},
+    {id:'1.3', text:'Check safety of system prior to I/T/C'},
+    {id:'2.1', text:'Assess suitability of safe system of work'},
+    {id:'2.2', text:'Visual inspection per spec, BS 7671 & GN3'},
+    {id:'2.3', text:'Complete Schedule of Inspections per BS7671 & GN3'},
+    {id:'3.1', text:'Select correct test instruments and accessories'},
+    {id:'3.2', text:'Carry out tests per spec, BS7671 & manufacturer'},
+    {id:'3.2a', text:'Range: Continuity'},
+    {id:'3.2b', text:'Range: Insulation resistance'},
+    {id:'3.2c', text:'Range: Polarity'},
+    {id:'3.2d', text:'Range: EFLI / earth electrode'},
+    {id:'3.2e', text:'Range: Prospective fault current'},
+    {id:'3.2f', text:'Range: RCD operation'},
+    {id:'3.2g', text:'Range: Functional testing'},
+    {id:'3.3', text:'Analyse/verify test results; report findings'},
+    {id:'3.3a', text:'Range: Reps of other services / colleagues'},
+    {id:'3.3b', text:'Range: Customers / clients'},
+    {id:'3.4a', text:'Complete: EIC, schedule of inspections, schedule of results'},
+    {id:'3.4b', text:'Complete: Minor Works Certificate'},
+    {id:'3.5', text:'Handover with complete documentation & satisfaction'},
+    {id:'3.6', text:'Demonstrate operation per spec & client requirements'}
+  ];
+
+  window.CRITERIA_115 = [
+    {id:'1.1', text:'Check it is safe to carry out fault diagnosis'},
+    {id:'1.2', text:'Inform relevant personnel of the fault diagnosis work'},
+    {id:'1.3', text:'Carry out the safe isolation procedure'},
+    {id:'1.4', text:'Ensure safety of self/others when diagnosing/correcting faults'},
+    {id:'2.1', text:'Communicate with relevant personnel to ascertain nature of fault'},
+    {id:'2.2', text:'Select & interpret appropriate documents (layouts, schematics)'},
+    {id:'2.3a', text:'Communicate potential disruption: Other workers/colleagues'},
+    {id:'2.3b', text:'Communicate potential disruption: Customers/clients'},
+    {id:'2.4', text:'Carry out relevant inspections; analyse findings'},
+    {id:'2.5', text:'Confirm test instruments fit for purpose & calibrated'},
+    {id:'2.6', text:'Perform suitable diagnostic tests to identify faults'},
+    {id:'2.6a', text:'Range: Loss of supply'},
+    {id:'2.6b', text:'Range: Overload'},
+    {id:'2.6c', text:'Range: Short circuit'},
+    {id:'2.6d', text:'Range: Earth fault'},
+    {id:'2.6e', text:'Range: Incorrect phase rotation'},
+    {id:'2.6f', text:'Range: High resistance joints / loose terminals'},
+    {id:'2.6g', text:'Range: Component/accessory/equipment faults'},
+    {id:'2.6h', text:'Range: Open circuit'},
+    {id:'2.6i', text:'Range: Signal faults'},
+    {id:'2.7a', text:'Methods: logical approach'},
+    {id:'2.7b', text:'Methods: safe working practices'},
+    {id:'2.7c', text:'Methods: interpretation of test readings'},
+    {id:'2.8', text:'Use appropriate instruments correctly'},
+    {id:'2.8a', text:'Range: Voltage indicator'},
+    {id:'2.8b', text:'Range: Low resistance ohm meter'},
+    {id:'2.8c', text:'Range: Insulation resistance tester'},
+    {id:'2.8d', text:'Range: EFLI and PFC tester'},
+    {id:'2.8e', text:'Range: RCD tester'},
+    {id:'2.8f', text:'Range: Ammeter'},
+    {id:'2.8g', text:'Range: Phase rotation tester'},
+    {id:'2.8h', text:'Range: Other appropriate instrument'},
+    {id:'3.1', text:'Assess repairs/removals/replacements with relevant people'},
+    {id:'3.1a', text:'ONE: Other workers/colleagues'},
+    {id:'3.1b', text:'ONE: Customers/clients'},
+    {id:'3.2', text:'Perform fault correction safely with appropriate tools/materials'},
+    {id:'3.3a', text:'Replacements: ease of access'},
+    {id:'3.3b', text:'Replacements: compliance with regulations'},
+    {id:'3.3c', text:'Replacements: compliance with manufacturer/organisation'},
+    {id:'3.4', text:'Leave equipment/components safe if not immediately rectified'},
+    {id:'3.5', text:'Inspection & testing confirm proper function after correction'},
+    {id:'3.6', text:'Record test results & info; report to relevant people'},
+    {id:'3.6a', text:'ONE: Other workers/colleagues'},
+    {id:'3.6b', text:'ONE: Customers/clients'},
+    {id:'3.6c', text:'ONE: Representatives of other services'}
+  ];
+
+  window.CRITERIA_118 = [
+    {id:'1.1', text:'Evaluate/apply procedures: selecting tools/equipment for termination/connection'},
+    {id:'1.1b', text:'PPE adoption'},
+    {id:'1.1c', text:'Follow safe system of work (RA/MS/permit)'},
+    {id:'1.2a', text:'Safe isolation present / checking presence of supply'},
+    {id:'1.2b', text:'Mechanical soundness of equipment to be connected to'},
+    {id:'1.2c', text:'Checking for unsafe situations'},
+    {id:'2.1', text:'Terminate and connect cables and conductors per spec/BS7671'},
+    {id:'2.1a', text:'Range: Single core (singles)'},
+    {id:'2.1b', text:'Range: Multi-core insulated cable'},
+    {id:'2.1c', text:'Range: PVC/PVC flat profile cable'},
+    {id:'2.1d', text:'Range: MICC'},
+    {id:'2.1e', text:'Range: Fire performance'},
+    {id:'2.1f', text:'Range: SWA cable'},
+    {id:'2.1g', text:'Range: GSWB galvanised steel wire braid'},
+    {id:'2.1h', text:'Range: Data cable/PoE'},
+    {id:'2.1i', text:'Range: DC Cabling'},
+    {id:'2.2', text:'Connect electrical equipment per spec/BS7671'},
+    {id:'2.2a', text:'Range: Isolators / switches'},
+    {id:'2.2b', text:'Range: Socket-outlets'},
+    {id:'2.2c', text:'Range: Distribution boards / CCUs'},
+    {id:'2.2d', text:'Range: Luminaires'},
+    {id:'2.2e', text:'Range: Electric motors / motor control'},
+    {id:'2.2f', text:'Range: Over-current protective devices'},
+    {id:'2.2g', text:'Range: Earthing terminals'},
+    {id:'2.2h', text:'Range: Control panels'},
+    {id:'2.2i', text:'Range: Data outlets / connections'},
+    {id:'2.2j', text:'Range: Fire detection / alarm components'},
+    {id:'2.2k', text:'Range: Other appropriate equipment'},
+    {id:'2.3', text:'Terminate/connect conductors using appropriate methods'},
+    {id:'2.3a', text:'Range: Screwing'},
+    {id:'2.3b', text:'Range: Crimping'},
+    {id:'2.3c', text:'Range: Soldering'},
+    {id:'2.3d', text:'Range: Non-screw Compression'},
+    {id:'2.3e', text:'Range: Insulation displacement'},
+    {id:'2.4', text:'Ensure terminations/connections are electrically & mechanically sound'},
+    {id:'2.5', text:'Ensure cables have appropriate identification per BS7671'}
+  ];
+
+  window.getCriteriaForActive = function(){
+    var u = (document.getElementById('unitSelect')||{}).value || '102';
+    switch(String(u)){
+      case '102': return window.CRITERIA_102;
+      case '106': return window.CRITERIA_106;
+      case '109': return window.CRITERIA_109;
+      case '113': return window.CRITERIA_113;
+      case '115': return window.CRITERIA_115;
+      case '118': return window.CRITERIA_118;
+      default: return window.CRITERIA_102;
+    }
+  };
+})();
+</script><script>
+// ---- Table-scanning approach: picker builds from VISIBLE criteria rows, and ticks the REAL checkbox ----
+document.addEventListener('DOMContentLoaded', function(){
+  const $ = (sel,root=document)=>root.querySelector(sel);
+  const $$ = (sel,root=document)=>Array.from(root.querySelectorAll(sel));
+
+  // Build a stable id for a TR like "2.6a"
+  function rowKeyFromTr(tr){
+    const tds = tr.querySelectorAll('td');
+    let code = (tds[0] && (tds[0].innerText||'').trim()) || '';
+    let letter = (tds[1] && tds[1].classList.contains('letter')) ? (tds[1].innerText||'').trim() : '';
+    if (!code && letter){
+      let p = tr.previousElementSibling;
+      while(p){
+        const c0 = p.querySelector('td');
+        const c0txt = c0 ? (c0.innerText||'').trim() : '';
+        if (c0txt && /^\d+(?:\.\d+)?R?$/.test(c0txt)){
+          code = c0txt.replace(/R$/,'');
+          break;
+        }
+        p = p.previousElementSibling;
+      }
+    }
+    return (code + letter).trim();
+  }
+
+  // Scan currently visible criteria tables and return list of selectable rows
+  function scanVisibleCriteria(){
+    const list = [];
+    $$('.criteria-table').forEach(tbl=>{
+      // Only include tables that are not hidden (no display:none ancestor)
+      if (tbl.offsetParent === null) return;
+      const headerIndex = {};
+      // map header names to indices
+      const hdrRow = tbl.querySelector('tr:nth-child(2)') || tbl.querySelector('tr'); // try second row with headers
+      if (hdrRow){
+        Array.from(hdrRow.children).forEach((th,i)=>{
+          const t = (th.innerText||'').trim().toLowerCase();
+          headerIndex[i] = t;
+        });
+      }
+      tbl.querySelectorAll('tr').forEach(tr=>{
+        const tds = tr.querySelectorAll('td');
+        if (!tds.length) return;
+        const hasCheckbox = tr.querySelector('input[type="checkbox"]');
+        if (!hasCheckbox) return; // skip non-selectable rows
+        const code = rowKeyFromTr(tr);
+        if (!code) return;
+        // description cell likely index 2 (Criteria, Sub, Description, ...)
+        const descTd = tds[2] || tds[1] || tds[0];
+        const text = (descTd && (descTd.innerText||'').trim()) || '';
+        list.push({ code, text, tr });
+      });
+    });
+    return list;
+  }
+
+  // Get "Obs" checkbox for a given row via header match
+  function getObsCheckboxForRow(tr){
+    const tbl = tr.closest('table');
+    if (!tbl) return tr.querySelectorAll('input[type="checkbox"]')[1] || null;
+    let obsIdx = -1;
+    const headRows = Array.from(tbl.querySelectorAll('tr')).filter(r=> r.querySelector('th'));
+    for (const hr of headRows){
+      const ths = Array.from(hr.querySelectorAll('th'));
+      for (let i=0;i<ths.length;i++){
+        const txt = (ths[i].innerText||'').trim().toLowerCase();
+        if (txt === 'obs' || txt.includes('obs')){ obsIdx = i; break; }
+      }
+      if (obsIdx >= 0) break;
+    }
+    if (obsIdx >= 0){
+      const tds = Array.from(tr.children);
+      const td = tds[obsIdx];
+      if (td) return td.querySelector('input[type="checkbox"]');
+    }
+    // fallback second checkbox
+    const boxes = tr.querySelectorAll('input[type="checkbox"]');
+    return boxes[1] || null;
+  }
+
+  function getWtCheckboxForRow(tr){
+    const tbl = tr.closest('table'); if (!tbl) return null;
+    let wtIdx = -1;
+    const headRows = Array.from(tbl.querySelectorAll('tr')).filter(r=> r.querySelector('th'));
+    for (const hr of headRows){
+      const ths = Array.from(hr.querySelectorAll('th'));
+      for (let i=0;i<ths.length;i++){
+        const txt = (ths[i].innerText||'').trim().toLowerCase();
+        if (txt === 'wt' || txt.includes('wt')){ wtIdx = i; break; }
+      }
+      if (wtIdx >= 0) break;
+    }
+    if (wtIdx >= 0){
+      const tds = Array.from(tr.children);
+      const td = tds[wtIdx];
+      if (td) return td.querySelector('input[type="checkbox"]');
+    }
+    return null;
+  }
+
+  function updateRowHighlight(tr){
+    if (!tr) return;
+    const any = tr.querySelectorAll('input[type="checkbox"]:checked').length > 0;
+    tr.classList.toggle('checked', any);
+  }
+
+  // Ensure any tick turns row green
+  (function wireTableHighlighting(){
+    $$('.criteria-table').forEach(tbl=>{
+      tbl.addEventListener('change', (e)=>{
+        if (e.target && e.target.type==='checkbox'){
+          updateRowHighlight(e.target.closest('tr'));
+        }
+      });
+      tbl.querySelectorAll('tr').forEach(tr=> updateRowHighlight(tr));
+    });
+  })();
+
+  // Build picker against the scanned rows so ids ALWAYS match
+  function buildCriteriaPicker(preSelectedCodes){
+    const rows = scanVisibleCriteria(); // exact rows in view
+    const wrap = document.createElement('div');
+    wrap.className = 'criteria-picker';
+    const title = document.createElement('h4'); title.textContent = 'Link criteria (tick all that apply)';
+    wrap.appendChild(title);
+
+    const grid = document.createElement('div'); grid.className = 'grid';
+    rows.forEach(entry=>{
+      const id = entry.code;
+      const label = document.createElement('label');
+      const cb = document.createElement('input'); cb.type = 'checkbox'; cb.dataset.critId = id;
+      if (Array.isArray(preSelectedCodes) && preSelectedCodes.includes(id)) cb.checked = true;
+      const span = document.createElement('span'); span.textContent = id + (entry.text ? ' — ' + entry.text : '');
+      label.appendChild(cb); label.appendChild(span);
+      // When ticked: tick the REAL Obs box for that row and green it
+      cb.addEventListener('change', ()=>{
+        const tr = entry.tr;
+        if (cb.checked && tr){
+          const obs = getObsCheckboxForRow(tr);
+          if (obs && !obs.checked){
+            obs.checked = true;
+            obs.dispatchEvent(new Event('change', {bubbles:true}));
+          }
+          const wt = getWtCheckboxForRow(tr);
+          if (wt && wt.checked){
+            wt.checked = false;
+            wt.dispatchEvent(new Event('change', {bubbles:true}));
+          }
+          updateRowHighlight(tr);
+        }
+      });
+      grid.appendChild(label);
+    });
+    wrap.appendChild(grid);
+
+    const actions = document.createElement('div'); actions.className = 'criteria-actions';
+    const done = document.createElement('button'); done.type='button'; done.textContent='Done';
+    actions.appendChild(done);
+    wrap.appendChild(actions);
+
+    const summary = document.createElement('div'); summary.className='criteria-summary'; summary.style.display='none';
+    summary.innerHTML = `<h5>Linked criteria</h5><ul class="crit-list"></ul>`;
+    wrap.appendChild(summary);
+
+    function showSummary(codes){
+      const card = wrap.closest('.photo-card');
+      if (card) card.dataset.criteriaSelected = JSON.stringify(codes);
+      const ul = summary.querySelector('.crit-list'); ul.innerHTML='';
+      const map = Object.fromEntries(rows.map(r=> [r.code, r]));
+      codes.forEach(code=>{
+        const e = map[code];
+        if (!e) return;
+        // enforce Obs + green again on Done
+        const tr = e.tr;
+        const obs = getObsCheckboxForRow(tr);
+        if (obs && !obs.checked){
+          obs.checked = true; obs.dispatchEvent(new Event('change', {bubbles:true}));
+        }
+        const wt = getWtCheckboxForRow(tr);
+        if (wt && wt.checked){ wt.checked = false; wt.dispatchEvent(new Event('change', {bubbles:true})); }
+        updateRowHighlight(tr);
+        const li = document.createElement('li'); li.dataset.critId = code;
+        li.textContent = code + (e.text ? ' — ' + e.text : '');
+        ul.appendChild(li);
+      });
+      summary.style.display = '';
+      grid.style.display = 'none';
+      actions.style.display = 'none';
+      let edit = summary.querySelector('button');
+      if (!edit){
+        edit = document.createElement('button'); edit.type='button'; edit.textContent='Edit selection';
+        edit.style.marginTop = '8px';
+        edit.addEventListener('click', ()=>{
+          grid.style.display='grid';
+          actions.style.display='flex';
+          summary.style.display='none';
+          const prev = codes.slice();
+          Array.from(wrap.querySelectorAll('input[type="checkbox"][data-crit-id]')).forEach(cb=>{
+            cb.checked = prev.includes(cb.dataset.critId);
+          });
+        });
+        summary.appendChild(edit);
+      }
+    }
+
+    done.addEventListener('click', ()=>{
+      const chosen = Array.from(wrap.querySelectorAll('input[type="checkbox"][data-crit-id]')).filter(cb=>cb.checked).map(cb=>cb.dataset.critId);
+      showSummary(chosen);
+    });
+
+    // If restoring preSelected, immediately show summary and ensure ticks
+    if (Array.isArray(preSelectedCodes) && preSelectedCodes.length){
+      // also pre-apply the obs/green for each
+      const setCodes = new Set(preSelectedCodes);
+      rows.forEach(entry=>{
+        if (setCodes.has(entry.code)){
+          const tr = entry.tr;
+          const obs = getObsCheckboxForRow(tr);
+          if (obs && !obs.checked){ obs.checked = true; obs.dispatchEvent(new Event('change', {bubbles:true})); }
+          const wt = getWtCheckboxForRow(tr);
+          if (wt && wt.checked){ wt.checked = false; wt.dispatchEvent(new Event('change', {bubbles:true})); }
+          updateRowHighlight(tr);
+        }
+      });
+      showSummary(preSelectedCodes);
+    }
+
+    return wrap;
+  }
+
+  // Single photo handler
+  (function ensureSinglePhotoHandler(){
+    const input = document.getElementById('photoInput');
+    const container = document.getElementById('photoContainer');
+    if (!input || !container) return;
+    const clone = input.cloneNode(true);
+    input.parentNode.replaceChild(clone, input);
+    const photoInput = clone;
+    photoInput.addEventListener('change', (e)=>{
+      const files = Array.from(e.target.files || []);
+      files.forEach(file=>{
+        const reader = new FileReader();
+        reader.onload = (ev)=>{
+          const card = document.createElement('div');
+          card.className = 'photo-card';
+          card.innerHTML = `<div class="photo-frame"><img alt="Photo"></div>
+                            <input type="text" placeholder="Caption">`;
+          card.querySelector('img').src = ev.target.result;
+          card.appendChild(buildCriteriaPicker([]));
+          const actions = document.createElement('div');
+          actions.className = 'photo-card-actions';
+          const del = document.createElement('button'); del.type='button'; del.textContent='Delete photo'; del.addEventListener('click', ()=> card.remove());
+          const add = document.createElement('button'); add.type='button'; add.textContent='Add another photo'; add.addEventListener('click', ()=> photoInput.click());
+          actions.appendChild(del); actions.appendChild(add);
+          card.appendChild(actions);
+          container.appendChild(card);
+        };
+        reader.readAsDataURL(file);
+      });
+      e.target.value = "";
+    });
+  })();
+
+  // Save / Load / Clear / Print logic stays as previous working version
+  function serializeState(){
+    const data = {version:8, unit: ($('#unitSelect')||{}).value, fields:{}, checks:[], photos:[], sigs:{}};
+    $$('input[type="text"], textarea').forEach(inp=>{
+      const key = inp.id || inp.name || inp.placeholder || ('field_'+Math.random().toString(36).slice(2,8));
+      data.fields[key] = inp.value;
+    });
+    $$('.criteria-table').forEach(tbl=>{
+      tbl.querySelectorAll('tr').forEach(tr=>{
+        const boxes = tr.querySelectorAll('input[type="checkbox"]');
+        if (!boxes.length) return;
+        const key = rowKeyFromTr(tr);
+        boxes.forEach((cb,idx)=>{ if (cb.checked) data.checks.push({row:key, col:idx}); });
+      });
+    });
+    $$('.photo-card').forEach(card=>{
+      const src = (card.querySelector('img')||{}).src || '';
+      const caption = (card.querySelector('input[type="text"]')||{}).value || '';
+      let chosen = [];
+      if (card.dataset.criteriaSelected){
+        try{ chosen = JSON.parse(card.dataset.criteriaSelected) || []; }catch(e){}
+      }
+      if (!chosen.length){
+        chosen = Array.from(card.querySelectorAll('.criteria-picker input[type="checkbox"][data-crit-id]'))
+          .filter(x=>x.checked).map(x=>x.dataset.critId);
+      }
+      data.photos.push({src, caption, criteria: chosen});
+    });
+    $$('canvas').forEach(cv=>{
+      try{ data.sigs[cv.id||('sig_'+Math.random().toString(36).slice(2,6))] = cv.toDataURL('image/png'); }catch(e){}
+    });
+    return data;
+  }
+
+  function restoreState(data){
+    if (!data) return;
+    if (data.unit && $('#unitSelect')){
+      $('#unitSelect').value = data.unit;
+      if (typeof applyTitles==='function') applyTitles(data.unit);
+      if (typeof showUnit==='function') showUnit(data.unit);
+    }
+    Object.entries(data.fields||{}).forEach(([k,v])=>{
+      const el = document.getElementById(k) || document.querySelector(`input[placeholder="${k}"], textarea[placeholder="${k}"]`);
+      if (el && 'value' in el) el.value = v;
+    });
+    $$('.criteria-table').forEach(tbl=>{
+      tbl.querySelectorAll('tr').forEach(tr=>{
+        const key = rowKeyFromTr(tr);
+        const boxes = tr.querySelectorAll('input[type="checkbox"]');
+        boxes.forEach((cb,idx)=>{
+          const on = (data.checks||[]).some(c=> c.row===key && c.col===idx);
+          cb.checked = !!on;
+          cb.dispatchEvent(new Event('change',{bubbles:true}));
+        });
+        updateRowHighlight(tr);
+      });
+    });
+    const container = $('#photoContainer');
+    if (container){
+      container.innerHTML = '';
+      (data.photos||[]).forEach(p=>{
+        const card = document.createElement('div');
+        card.className = 'photo-card';
+        card.innerHTML = `<div class="photo-frame"><img alt="Photo"></div>
+                          <input type="text" placeholder="Caption">`;
+        card.querySelector('img').src = p.src || '';
+        card.querySelector('input[type="text"]').value = p.caption || '';
+        // Build picker from currently visible rows and preselect
+        const picker = buildCriteriaPicker(p.criteria||[]);
+        card.appendChild(picker);
+        card.dataset.criteriaSelected = JSON.stringify(p.criteria||[]);
+        // After building, force the real form ticks for each code
+        const rows = scanVisibleCriteria();
+        const map = Object.fromEntries(rows.map(r=> [r.code, r.tr]));
+        (p.criteria||[]).forEach(code=>{
+          const tr = map[code];
+          if (!tr) return;
+          const obs = getObsCheckboxForRow(tr);
+          if (obs && !obs.checked){ obs.checked = true; obs.dispatchEvent(new Event('change',{bubbles:true})); }
+          const wt = getWtCheckboxForRow(tr);
+          if (wt && wt.checked){ wt.checked = false; wt.dispatchEvent(new Event('change',{bubbles:true})); }
+          updateRowHighlight(tr);
+        });
+        const actions = document.createElement('div');
+        actions.className = 'photo-card-actions';
+        const del = document.createElement('button'); del.type='button'; del.textContent='Delete photo'; del.addEventListener('click', ()=> card.remove());
+        const add = document.createElement('button'); add.type='button'; add.textContent='Add another photo'; add.addEventListener('click', ()=> ($('#photoInput')||{}).click && $('#photoInput').click());
+        actions.appendChild(del); actions.appendChild(add);
+        card.appendChild(actions);
+        container.appendChild(card);
+      });
+    }
+  }
+
+  function downloadJSON(obj, name){
+    const blob = new Blob([JSON.stringify(obj,null,2)], {type:'application/json'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a'); a.href = url; a.download = name||'AOR_save.json';
+    document.body.appendChild(a); a.click();
+    setTimeout(()=>{ document.body.removeChild(a); URL.revokeObjectURL(url); }, 1000);
+  }
+
+  // Rebind toolbar
+  ['btnPrint','btnSave','btnLoad','btnClear'].forEach(id=>{
+    const old = document.getElementById(id); if (!old) return;
+    const btn = old.cloneNode(true); old.parentNode.replaceChild(btn, old);
+  });
+  const btnPrint = $('#btnPrint'), btnSave = $('#btnSave'), btnLoad = $('#btnLoad'), btnClear = $('#btnClear'), fileLoad = $('#fileLoad');
+  if (btnPrint) btnPrint.addEventListener('click', ()=> window.print());
+  if (btnSave) btnSave.addEventListener('click', ()=>{
+    const data = serializeState();
+    try{ localStorage.setItem('AOR_SAVE', JSON.stringify(data)); }catch(e){}
+    downloadJSON(data, 'AOR_save_'+(data.unit||'all')+'.json');
+    alert('Draft saved.');
+  });
+  if (btnLoad) btnLoad.addEventListener('click', ()=>{
+    try{
+      const cached = localStorage.getItem('AOR_SAVE');
+      if (cached){ restoreState(JSON.parse(cached)); alert('Draft loaded from this device.'); return; }
+    }catch(e){}
+    if (fileLoad){ fileLoad.value=''; fileLoad.click(); }
+  });
+  if (fileLoad) fileLoad.addEventListener('change', (ev)=>{
+    const f = ev.target.files && ev.target.files[0]; if (!f) return;
+    const reader = new FileReader();
+    reader.onload = (e)=>{
+      try{ restoreState(JSON.parse(e.target.result)); alert('Draft loaded from file.'); }
+      catch(err){ alert('Could not load file.'); }
+    };
+    reader.readAsText(f);
+  });
+  if (btnClear) btnClear.addEventListener('click', ()=>{
+    if (!confirm('Clear the entire form?')) return;
+    $$('input[type="text"], textarea').forEach(el=> el.value='');
+    $$('select').forEach(sel=> sel.selectedIndex = 0);
+    $$('.criteria-table tr').forEach(tr=>{
+      tr.classList.remove('checked');
+      tr.querySelectorAll('input[type="checkbox"]').forEach(cb=> cb.checked=false);
+    });
+    const pc = $('#photoContainer'); if (pc) pc.innerHTML = '';
+    $$('canvas').forEach(cv=> cv.getContext('2d').clearRect(0,0,cv.width,cv.height));
+    try{ localStorage.removeItem('AOR_SAVE'); }catch(e){}
+  });
+
+  // If unit changes, future photo pickers will scan the new table automatically
+  const unitSel = $('#unitSelect');
+  if (unitSel){
+    unitSel.addEventListener('change', ()=>{
+      // no-op needed; scanning happens when building pickers for new photos
+    });
+  }
+});
+</script></body>
+</html>
