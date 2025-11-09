@@ -1,15 +1,18 @@
 
-# AOR 5357-23 Unit 102 v1 — PWA (PDF Export Fix)
+# AOR 5357-23 Unit 102 v1 — PWA (Dual Signatures + Header Fields)
 
 ## What's new
-- Fixed **Save Draft** reliability (persistent storage on iPad).
-- Fixed **Export to PDF** with a fallback print-based export.
-- Added small status pill showing save mode (persistent/session-only).
+- Top header added: "Applying Health, Safety & Environmental Considerations" with inputs:
+  - Candidate name, Date, Job Description, Site address
+- Two smaller signature boxes:
+  - Assessor name + signature
+  - Learner name + signature
+- Save/Load now includes all new fields and both signatures.
 
 ## Files included
-- index.html (ready: save, load, delete photo, multi-criteria, PDF export)
+- index.html (this build)
 - manifest.webmanifest
-- sw.js (cache v5)
+- sw.js (cache v6)
 - icons/ (180, 192, 512 png)
 
 ## Upload steps
@@ -23,4 +26,4 @@
 5. On iPad Safari → Share → Add to Home Screen.
 
 ## Updating
-If your iPad doesn’t show the update, open **sw.js**, change CACHE_NAME (e.g., v6), commit, refresh twice.
+If you don't see changes, open **sw.js**, bump CACHE_NAME to a new version (e.g., v7), commit, refresh twice.

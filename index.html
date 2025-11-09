@@ -36,9 +36,39 @@
 #storageStatus {
   display:inline-block; margin-left:8px; font-size:12px; padding:2px 6px; border:1px solid #888; border-radius:10px;
 }
+</style><style>
+@media print {
+  .sig-card button { display:none !important; }
+}
 </style></head>
 <body>
-<h1>Assessor Observation Report – Unit 102</h1>
+<h1>Assessor Observation Report – Unit 102</h1><div class="asec-header">
+<h2>Applying Health, Safety &amp; Environmental Considerations</h2>
+<table class="asec-table" style="width:100%; border-collapse:collapse; margin:10px 0;">
+<tr>
+<th style="text-align:left; border:1px solid #000; padding:6px; width:180px;">Candidate name</th>
+<td style="border:1px solid #000; padding:6px;">
+<input id="candidateName" style="width:100%; box-sizing:border-box;" type="text"/>
+</td>
+<th style="text-align:left; border:1px solid #000; padding:6px; width:100px;">Date</th>
+<td style="border:1px solid #000; padding:6px; width:220px;">
+<input id="assessmentDate" style="width:100%; box-sizing:border-box;" type="date"/>
+</td>
+</tr>
+<tr>
+<th style="text-align:left; border:1px solid #000; padding:6px;">Job Description</th>
+<td colspan="3" style="border:1px solid #000; padding:6px;">
+<input id="jobDescription" style="width:100%; box-sizing:border-box;" type="text"/>
+</td>
+</tr>
+<tr>
+<th style="text-align:left; border:1px solid #000; padding:6px;">Site address</th>
+<td colspan="3" style="border:1px solid #000; padding:6px;">
+<input id="siteAddress" style="width:100%; box-sizing:border-box;" type="text"/>
+</td>
+</tr>
+</table>
+</div>
 <!-- Section 1 -->
 <table class="criteria-table">
 <tr><th colspan="7">1 Apply relevant health &amp; safety legislation in the workplace.</th></tr>
@@ -101,11 +131,27 @@
 <h2>Assessor Feedback</h2>
 <textarea placeholder="Enter assessor feedback here..." rows="5"></textarea>
 </div>
+
 <div class="signature-section">
-<h2>Signature</h2>
-<canvas id="signature"></canvas><br/>
-<button id="clearSig">Clear Signature</button>
-</div><div class="controls">
+<h2>Signatures</h2>
+<div class="sig-grid" style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+<div class="sig-card" style="border:1px solid #000; padding:10px;">
+<label for="assessorName"><strong>Assessor name</strong></label>
+<input id="assessorName" style="width:100%; box-sizing:border-box; margin:6px 0 8px 0;" type="text"/>
+<label><strong>Assessor signature</strong></label>
+<canvas class="sig-canvas" id="signatureAssessor" style="border:1px solid #000; width:100%; height:120px;"></canvas><br/>
+<button id="clearSigAssessor" type="button">Clear Assessor Signature</button>
+</div>
+<div class="sig-card" style="border:1px solid #000; padding:10px;">
+<label for="learnerName"><strong>Learner name</strong></label>
+<input id="learnerName" style="width:100%; box-sizing:border-box; margin:6px 0 8px 0;" type="text"/>
+<label><strong>Learner signature</strong></label>
+<canvas class="sig-canvas" id="signatureLearner" style="border:1px solid #000; width:100%; height:120px;"></canvas><br/>
+<button id="clearSigLearner" type="button">Clear Learner Signature</button>
+</div>
+</div>
+</div>
+<div class="controls">
 <button id="saveDraft">Save Draft</button>
 <button id="loadDraft">Load Draft</button>
 <button id="clearDraft">Clear Draft</button>
@@ -555,6 +601,187 @@ document.getElementById('exportPDF').addEventListener('click', () => window.prin
       exportToPDFViaPrint();
     }, {capture: true});
   }
+})();
+</script><script>
+(function(){
+  // Pointer-enhanced signature handling for multiple canvases
+  function enhanceSignatureCanvas(canvasId, clearBtnId){
+    const canvas = document.getElementById(canvasId);
+    if (!canvas || canvas.__pointerEnhanced) return;
+    canvas.__pointerEnhanced = true;
+    const ctx = canvas.getContext('2d');
+
+    function resizeCanvasForDPR() {
+      const dpr = window.devicePixelRatio || 1;
+      const rect = canvas.getBoundingClientRect();
+      const w = Math.max(1, Math.round(rect.width * dpr));
+      const h = Math.max(1, Math.round(rect.height * dpr));
+      if (canvas.width !== w || canvas.height !== h) {
+        const prev = ctx.getImageData(0, 0, canvas.width || 1, canvas.height || 1);
+        canvas.width = w; canvas.height = h;
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        ctx.lineWidth = 2; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+        try { ctx.putImageData(prev, 0, 0); } catch(_) {}
+      }
+    }
+    resizeCanvasForDPR();
+    window.addEventListener('resize', resizeCanvasForDPR);
+
+    let drawing = false;
+    function point(e){
+      const rect = canvas.getBoundingClientRect();
+      return { x: e.clientX - rect.left, y: e.clientY - rect.top };
+    }
+    canvas.addEventListener('pointerdown', (e)=>{
+      if (e.pointerType === 'touch') e.preventDefault();
+      canvas.setPointerCapture(e.pointerId);
+      drawing = true;
+      const p = point(e);
+      ctx.beginPath(); ctx.moveTo(p.x, p.y);
+    }, {passive:false});
+    canvas.addEventListener('pointermove', (e)=>{
+      if (!drawing) return;
+      if (e.pointerType === 'touch') e.preventDefault();
+      const p = point(e);
+      ctx.lineTo(p.x, p.y); ctx.stroke();
+    }, {passive:false});
+    function endStroke(e){
+      if (!drawing) return;
+      drawing = false;
+      try { canvas.releasePointerCapture(e.pointerId); } catch(_){}
+    }
+    canvas.addEventListener('pointerup', endStroke);
+    canvas.addEventListener('pointercancel', endStroke);
+
+    const clearBtn = document.getElementById(clearBtnId);
+    if (clearBtn && !clearBtn.__bound) {
+      clearBtn.__bound = true;
+      clearBtn.addEventListener('click', ()=>ctx.clearRect(0,0,canvas.width,canvas.height));
+    }
+  }
+
+  enhanceSignatureCanvas('signatureAssessor', 'clearSigAssessor');
+  enhanceSignatureCanvas('signatureLearner', 'clearSigLearner');
+
+  // Upgrade Save/Load to include the new fields + both signatures
+  const STORAGE_KEY = 'obs-report-unit102-v4'; // bump key
+  const saveBtn  = document.getElementById('saveDraft');
+  const loadBtn  = document.getElementById('loadDraft');
+  const clearBtn = document.getElementById('clearDraft');
+
+  function collectDataV4() {
+    const feedbackEl = document.getElementById('feedback') || document.querySelector('textarea');
+    const sigA = document.getElementById('signatureAssessor');
+    const sigL = document.getElementById('signatureLearner');
+    const photos = Array.from(document.querySelectorAll('#photoContainer .photo-card')).map(card => {
+      const img = card.querySelector('img');
+      const captionEl = card.querySelector('.caption') || card.querySelector('input[type="text"]');
+      const caption = captionEl ? captionEl.value : '';
+      const selected = Array.from(card.querySelectorAll('.criteria-panel input[type="checkbox"]:checked')).map(i => i.value);
+      return { src: img ? img.src : '', caption, criteria: selected };
+    });
+    return {
+      // New header fields
+      candidateName: document.getElementById('candidateName')?.value || '',
+      assessmentDate: document.getElementById('assessmentDate')?.value || '',
+      jobDescription: document.getElementById('jobDescription')?.value || '',
+      siteAddress: document.getElementById('siteAddress')?.value || '',
+      assessorName: document.getElementById('assessorName')?.value || '',
+      learnerName: document.getElementById('learnerName')?.value || '',
+      // Existing fields
+      feedback: feedbackEl ? feedbackEl.value : '',
+      signatureAssessor: sigA ? sigA.toDataURL() : '',
+      signatureLearner: sigL ? sigL.toDataURL() : '',
+      ticks: Array.from(document.querySelectorAll('input[type="checkbox"]')).map(cb => cb.checked),
+      photos
+    };
+  }
+
+  function applyDataV4(data) {
+    if (!data) return;
+    // Header fields
+    const map = {
+      candidateName: 'candidateName',
+      assessmentDate: 'assessmentDate',
+      jobDescription: 'jobDescription',
+      siteAddress: 'siteAddress',
+      assessorName: 'assessorName',
+      learnerName: 'learnerName'
+    };
+    Object.keys(map).forEach(k => {
+      const el = document.getElementById(map[k]);
+      if (el) el.value = data[k] || '';
+    });
+
+    // Existing
+    const feedbackEl = document.getElementById('feedback') || document.querySelector('textarea');
+    if (feedbackEl) feedbackEl.value = data.feedback || '';
+
+    document.querySelectorAll('input[type="checkbox"]').forEach((cb,i)=>cb.checked = !!(data.ticks && data.ticks[i]));
+
+    function restoreSig(canvasId, img64){
+      const c = document.getElementById(canvasId);
+      if (c && img64) {
+        const ctx = c.getContext('2d');
+        const img = new Image();
+        img.onload = () => { ctx.clearRect(0,0,c.width,c.height); ctx.drawImage(img,0,0); };
+        img.src = img64;
+      }
+    }
+    restoreSig('signatureAssessor', data.signatureAssessor);
+    restoreSig('signatureLearner', data.signatureLearner);
+
+    // photos
+    const container = document.getElementById('photoContainer');
+    if (container) {
+      container.innerHTML = '';
+      (data.photos || []).forEach(ph => {
+        const div = document.createElement('div');
+        div.className = 'photo-card';
+        div.innerHTML = `
+          <img src="${ph.src}" alt="Photo">
+          <input type="text" class="caption" placeholder="Caption" value="${ph.caption || ''}">
+          <div class="criteria-picker"></div>
+          <div class="controls-row"><button type="button" class="delete-photo">Delete photo</button></div>
+        `;
+        container.appendChild(div);
+      });
+      document.dispatchEvent(new Event('obs-photos-restored'));
+    }
+  }
+
+  function bindV4() {
+    if (saveBtn && !saveBtn.__boundV4) {
+      saveBtn.__boundV4 = true;
+      saveBtn.addEventListener('click', () => {
+        try {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(collectDataV4()));
+          alert('Draft saved locally — reopen this page later to continue.');
+        } catch (err) {
+          window.tempDraftV4 = collectDataV4();
+          alert('Draft temporarily saved for this session — keep this tab open to retain changes.');
+        }
+      }, {capture:true});
+    }
+    if (loadBtn && !loadBtn.__boundV4) {
+      loadBtn.__boundV4 = true;
+      loadBtn.addEventListener('click', () => {
+        try {
+          const d = localStorage.getItem(STORAGE_KEY);
+          if (d) { applyDataV4(JSON.parse(d)); return; }
+        } catch (_){}
+        if (window.tempDraftV4) applyDataV4(window.tempDraftV4);
+      }, {capture:true});
+    }
+    if (clearBtn && !clearBtn.__boundV4) {
+      clearBtn.__boundV4 = true;
+      clearBtn.addEventListener('click', () => {
+        try { localStorage.removeItem(STORAGE_KEY); } catch(_){}
+        alert('Draft cleared');
+      }, {capture:true});
+    }
+  }
+  bindV4();
 })();
 </script></body>
 </html>
