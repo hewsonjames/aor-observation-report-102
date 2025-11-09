@@ -26,7 +26,17 @@
 
 #signature { touch-action: none; }
 </style>
-</head>
+<style>
+/* Print-friendly page setup */
+@media print {
+  .controls, .toggle-criteria, .criteria-panel, .delete-photo, #exportPDFHelper, #openInSafariBtn { display: none !important; }
+  body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  @page { size: A4; margin: 12mm; }
+}
+#storageStatus {
+  display:inline-block; margin-left:8px; font-size:12px; padding:2px 6px; border:1px solid #888; border-radius:10px;
+}
+</style></head>
 <body>
 <h1>Assessor Observation Report – Unit 102</h1>
 <!-- Section 1 -->
@@ -315,7 +325,6 @@ document.getElementById('exportPDF').addEventListener('click', () => window.prin
   }
 })();
 </script>
-
 <script>
 // === Signature: pointer events + high-DPI ===
 (function(){
@@ -476,6 +485,76 @@ document.getElementById('exportPDF').addEventListener('click', () => window.prin
   bind();
 })();
 </script>
+<div id="exportPDFHelper" style="margin-top:10px;"></div><script>
+(async function(){
+  // --- Try to enable persistent storage for reliable Save Draft ---
+  const statusEl = document.createElement('span');
+  statusEl.id = 'storageStatus';
+  const ctrl = document.querySelector('.controls');
+  if (ctrl) ctrl.appendChild(statusEl);
+  async function updatePersistStatus() {
+    try {
+      if (!('storage' in navigator) || !navigator.storage.persisted) return;
+      const persisted = await navigator.storage.persisted();
+      if (persisted) { statusEl.textContent = 'Saving: persistent'; return; }
+      if (navigator.storage.persist) {
+        const ok = await navigator.storage.persist();
+        statusEl.textContent = ok ? 'Saving: persistent' : 'Saving: session-only';
+      } else {
+        statusEl.textContent = 'Saving: session-only';
+      }
+    } catch(e){ statusEl.textContent = 'Saving: session-only'; }
+  }
+  updatePersistStatus();
 
-</body>
+  // --- Export to PDF helper: open a print-friendly window and trigger print ---
+  function exportToPDFViaPrint() {
+    try {
+      const html = document.documentElement.cloneNode(true);
+      // Hide buttons in the clone
+      html.querySelectorAll('.controls, .toggle-criteria, .criteria-panel, .delete-photo, #exportPDFHelper, #openInSafariBtn').forEach(el=>el && el.remove());
+      const w = window.open('', '_blank');
+      if (!w) { alert('Popup blocked. Allow popups for this site to export.'); return; }
+      w.document.open();
+      w.document.write('<!DOCTYPE html><html>' + html.innerHTML + '</html>');
+      w.document.close();
+      // Ensure print after load
+      w.onload = function(){ try { w.focus(); w.print(); } catch(e) {} };
+    } catch (e) {
+      alert('Could not open print window. You can also use Share → Print in Safari.');
+    }
+  }
+
+  // Add helper buttons if we can find the controls
+  const helper = document.getElementById('exportPDFHelper');
+  if (helper) {
+    helper.innerHTML = ''
+      + '<button id="exportPDF_Fallback" type="button">Export as PDF (compatibility)</button> '
+      + '<button id="openInSafariBtn" type="button">Open in Safari to Print</button>';
+    const btn = document.getElementById('exportPDF_Fallback');
+    if (btn) btn.addEventListener('click', exportToPDFViaPrint);
+    const openSafari = document.getElementById('openInSafariBtn');
+    if (openSafari) {
+      openSafari.addEventListener('click', () => {
+        try {
+          // Open a new tab with current page URL; on iOS this opens in browser chrome
+          window.open(window.location.href, '_blank');
+        } catch(e) {
+          alert('Could not open Safari automatically. Copy the URL and open it in Safari to use Share → Print.');
+        }
+      });
+    }
+  }
+
+  // Also patch existing Export button if present
+  const nativeExportBtn = document.getElementById('exportPDF');
+  if (nativeExportBtn && !nativeExportBtn.__patched) {
+    nativeExportBtn.__patched = true;
+    nativeExportBtn.addEventListener('click', function(e){
+      e.preventDefault();
+      exportToPDFViaPrint();
+    }, {capture: true});
+  }
+})();
+</script></body>
 </html>

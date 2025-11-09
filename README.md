@@ -1,18 +1,26 @@
 
-# AOR 5357-23 Unit 102 v1 — PWA (Ready to Upload)
+# AOR 5357-23 Unit 102 v1 — PWA (PDF Export Fix)
 
-## Files
-- index.html (patched: iPad signature + robust Save/Load + multi-criteria)
+## What's new
+- Fixed **Save Draft** reliability (persistent storage on iPad).
+- Fixed **Export to PDF** with a fallback print-based export.
+- Added small status pill showing save mode (persistent/session-only).
+
+## Files included
+- index.html (ready: save, load, delete photo, multi-criteria, PDF export)
 - manifest.webmanifest
-- sw.js (cache v4)
+- sw.js (cache v5)
 - icons/ (180, 192, 512 png)
 
-## Publish to GitHub Pages
-1. Create a public repo (e.g., aor-observation-report).
-2. Upload ALL files in this zip (index.html, manifest.webmanifest, sw.js, icons/ folder) to the repo root.
-3. Settings → Pages → Source: Deploy from a branch. Branch: main, folder: /(root). Save.
-4. Open: https://YOUR-USERNAME.github.io/YOUR-REPO-NAME/
-5. On iPad Safari: Share → Add to Home Screen.
+## Upload steps
+1. Create a **public** repo on GitHub (e.g., aor-observation-report).
+2. Upload ALL files from this zip to the repo **root**.
+3. Go to **Settings → Pages → Source → Deploy from a branch**.
+   - Branch: **main**, Folder: **/** (root)
+   - Click **Save**.
+4. Visit your site at:
+   https://YOUR-USERNAME.github.io/aor-observation-report/
+5. On iPad Safari → Share → Add to Home Screen.
 
 ## Updating
-If changes don’t appear, open sw.js and bump CACHE_NAME to a new version (e.g., v5), commit, then refresh twice.
+If your iPad doesn’t show the update, open **sw.js**, change CACHE_NAME (e.g., v6), commit, refresh twice.
